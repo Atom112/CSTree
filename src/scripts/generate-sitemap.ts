@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = path.resolve(__dirname, '../../dist');
-const SITE_URL = 'https://cstree.pages.dev';
+const SITE_URL = 'https://cstree.locx-loch.top';
 
 function collectHtmlFiles(dir: string): string[] {
   const files: string[] = [];

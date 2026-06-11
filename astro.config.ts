@@ -6,7 +6,7 @@ import { remarkWikiLink } from './src/plugins/remark-wiki-link';
 import { rehypeKnowledgeNode } from './src/plugins/rehype-knowledge-node';
 
 export default defineConfig({
-  site: 'https://cstree.pages.dev',
+  site: 'https://cstree.locx-loch.top',
   output: 'static',
   integrations: [
     react(),
