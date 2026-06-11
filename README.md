@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🌳 CSTree
+<img src="./logo.svg" alt="CSTree Logo" width="100" height="100" />
+
+# CSTree
 
 **计算机科学知识树 — 从晶体管到操作系统，自底向上系统化学习**
 
