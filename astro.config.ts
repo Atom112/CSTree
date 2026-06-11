@@ -5,11 +5,9 @@ import mdx from '@astrojs/mdx';
 import { remarkWikiLink } from './src/plugins/remark-wiki-link';
 import { rehypeKnowledgeNode } from './src/plugins/rehype-knowledge-node';
 
-import cloudflare from "@astrojs/cloudflare";
-
 export default defineConfig({
   site: 'https://cstree.locx-loch.top',
-  output: "hybrid",
+  output: 'static',
 
   integrations: [
     react(),
@@ -33,6 +31,4 @@ export default defineConfig({
       },
     },
   },
-
-  adapter: cloudflare()
 });
