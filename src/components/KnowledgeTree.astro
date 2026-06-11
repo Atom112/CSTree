@@ -1,64 +1,49 @@
 ---
+import KnowledgeTreeReact from './KnowledgeTreeReact';
+import MobileTreeList from './MobileTreeList.astro';
+
 export interface Props {
   nodes: Array<{
     id: string;
     title: string;
     summary: string;
-    parent?: string;
+    difficulty?: string;
+    parent?: string | null;
     children: string[];
     related: string[];
   }>;
+  currentId?: string;
 }
 
-const { nodes } = Astro.props;
-const rootNodes = nodes.filter((n) => !n.parent);
+const { nodes, currentId } = Astro.props;
 ---
 
-<div class="knowledge-tree-container w-full h-full">
-  <!-- Mobile: CSS collapsible list (placeholder) -->
+<div class="knowledge-tree-container w-full min-h-[400px]">
+  <!-- Mobile: collapsible tree list (<details> element, zero JS) -->
   <div class="block lg:hidden">
-    <p class="text-gray-400 text-sm mb-4">🔍 知识树导航（移动端折叠列表将在 Phase 4 实现）</p>
-    <ul class="space-y-2">
-      {rootNodes.map((root) => (
-        <li>
-          <a
-            href={`/node/${root.id}`}
-            class="block px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
-          >
-            <span class="font-medium">{root.title}</span>
-            <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">{root.summary}</span>
-          </a>
-          {root.children.length > 0 && (
-            <ul class="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
-              {root.children.map((childId) => {
-                const child = nodes.find((n) => n.id === childId);
-                if (!child) return null;
-                return (
-                  <li>
-                    <a
-                      href={`/node/${child.id}`}
-                      class="block px-3 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-sm transition-colors"
-                    >
-                      {child.title}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </li>
-      ))}
-    </ul>
+    <MobileTreeList nodes={nodes} currentId={currentId} />
   </div>
 
-  <!-- Desktop: React interactive D3 tree -->
-  <div class="hidden lg:block w-full h-[500px]" id="knowledge-tree-desktop">
-    <div class="flex items-center justify-center h-full border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl">
-      <div class="text-center">
-        <p class="text-4xl mb-2">🌳</p>
-        <p class="text-gray-400">交互式知识树（D3.js）将在 Phase 4 实现</p>
-        <p class="text-sm text-gray-500 mt-1">当前共 {nodes.length} 个知识节点</p>
-      </div>
-    </div>
+  <!-- Desktop: React + D3 interactive tree -->
+  <div class="hidden lg:block w-full h-[520px] bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+    <KnowledgeTreeReact
+      client:load
+      nodes={nodes.map((n) => ({
+        id: n.id,
+        title: n.title,
+        summary: n.summary,
+        parent: n.parent,
+        children: n.children,
+        difficulty: n.difficulty,
+      }))}
+      currentNodeId={currentId}
+    />
   </div>
+
+  <!-- Footer hint -->
+  <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center lg:text-left">
+    {nodes.length} 个知识节点
+    {currentId && <> · 当前：<span class="font-medium text-gray-500 dark:text-gray-400">{nodes.find((n) => n.id === currentId)?.title ?? currentId}</span></>}
+     · 滚轮缩放 · 点击跳转
+  </p>
 </div>

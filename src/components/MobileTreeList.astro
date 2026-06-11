@@ -3,26 +3,127 @@ export interface Props {
   nodes: Array<{
     id: string;
     title: string;
-    parent?: string;
+    summary: string;
+    parent?: string | null;
+    children: string[];
+    difficulty?: string;
   }>;
-  rootIds: string[];
   currentId?: string;
 }
 
-const { nodes, rootIds, currentId } = Astro.props;
+const { nodes, currentId } = Astro.props;
 const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
-// Build tree hierarchy
-function buildTree(parentId?: string): Array<{ id: string; title: string; depth: number }> {
-  const children = nodes
-    .filter((n) => (parentId ? n.parent === parentId : rootIds.includes(n.id)))
-    .map((n) => ({ id: n.id, title: n.title, depth: parentId ? 1 : 0 }));
-  return children;
+function getChildren(parentId: string): typeof nodes {
+  const explicit = (nodeMap.get(parentId)?.children ?? []).map((id) => nodeMap.get(id)).filter(Boolean);
+  const direct = nodes.filter((n) => n.parent === parentId);
+  const seen = new Set<string>();
+  return [...explicit, ...direct].filter((n) => {
+    if (!n || seen.has(n.id)) return false;
+    seen.add(n.id);
+    return true;
+  });
 }
+
+function renderBranch(nodeId: string, depth: number): string {
+  const node = nodeMap.get(nodeId);
+  if (!node) return '';
+
+  const children = getChildren(nodeId);
+  const isCurrent = nodeId === currentId;
+  const indent = depth * 16;
+  const liStyle = `style="list-style:none;margin-left:${indent}px"`;
+  const linkClass = `mobile-node-link${isCurrent ? ' mobile-node-current' : ''}`;
+  const icon = children.length > 0 ? '📂' : '📄';
+  const badge = children.length > 0
+    ? `<span class="mobile-node-count">${children.length}</span>`
+    : '';
+  const marker = isCurrent ? '<span class="ml-1.5 text-xs opacity-60">📍</span>' : '';
+
+  if (children.length === 0) {
+    return `<li ${liStyle}>
+      <a href="/node/${nodeId}" class="${linkClass}">
+        <span class="mobile-node-icon">${icon}</span>
+        <span>${node.title}</span>${marker}
+      </a>
+    </li>`;
+  }
+
+  const childrenHtml = children.map((c) => renderBranch(c.id, depth + 1)).join('\n');
+
+  return `<li ${liStyle}>
+    <details${isCurrent ? ' open' : ''}>
+      <summary class="mobile-node-summary">
+        <a href="/node/${nodeId}" class="${linkClass}" onclick="event.stopPropagation()">
+          <span class="mobile-node-icon">${icon}</span>
+          <span>${node.title}</span>${badge}${marker}
+        </a>
+      </summary>
+      <ul class="mobile-tree-sublist">${childrenHtml}</ul>
+    </details>
+  </li>`;
+}
+
+const htmlTree = nodes
+  .filter((n) => !n.parent)
+  .map((root) => renderBranch(root.id, 0))
+  .join('\n');
 ---
 
-<ul class="space-y-1">
-  {buildTree().map((item) => (
-    <TreeListBranchComponent node={item} allNodes={nodes} depth={0} currentId={currentId} />
-  ))}
-</ul>
+<div class="mobile-tree-container">
+  <ul class="mobile-tree-list" set:html={htmlTree} />
+</div>
+
+<style>
+  .mobile-tree-container {
+    @apply text-sm;
+  }
+
+  .mobile-tree-list,
+  .mobile-tree-sublist {
+    @apply list-none p-0 m-0;
+  }
+
+  .mobile-tree-list { @apply space-y-0.5; }
+  .mobile-tree-sublist {
+    @apply border-l-2 border-gray-200 dark:border-gray-700 ml-2 pl-1 mt-0.5 space-y-0.5;
+  }
+
+  .mobile-node-link {
+    @apply flex items-center gap-1.5 px-2.5 py-2 rounded-lg no-underline;
+    @apply text-gray-700 dark:text-gray-300;
+    @apply hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors;
+  }
+
+  .mobile-node-current {
+    @apply bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium;
+    @apply border border-blue-200 dark:border-blue-800;
+  }
+
+  .mobile-node-icon {
+    @apply flex-shrink-0 text-xs opacity-60;
+  }
+
+  .mobile-node-count {
+    @apply ml-auto text-xs px-1.5 py-0.5 rounded-full;
+    @apply bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400;
+  }
+
+  .mobile-node-summary {
+    @apply list-none cursor-pointer flex items-center;
+    @apply rounded-lg;
+  }
+
+  .mobile-node-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mobile-node-summary::before {
+    content: '▸';
+    @apply inline-block mr-1 text-gray-400 text-xs transition-transform flex-shrink-0;
+  }
+
+  details[open] > .mobile-node-summary::before {
+    transform: rotate(90deg);
+  }
+</style>
