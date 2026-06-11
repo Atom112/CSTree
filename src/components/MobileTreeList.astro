@@ -1,0 +1,28 @@
+---
+export interface Props {
+  nodes: Array<{
+    id: string;
+    title: string;
+    parent?: string;
+  }>;
+  rootIds: string[];
+  currentId?: string;
+}
+
+const { nodes, rootIds, currentId } = Astro.props;
+const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+// Build tree hierarchy
+function buildTree(parentId?: string): Array<{ id: string; title: string; depth: number }> {
+  const children = nodes
+    .filter((n) => (parentId ? n.parent === parentId : rootIds.includes(n.id)))
+    .map((n) => ({ id: n.id, title: n.title, depth: parentId ? 1 : 0 }));
+  return children;
+}
+---
+
+<ul class="space-y-1">
+  {buildTree().map((item) => (
+    <TreeListBranchComponent node={item} allNodes={nodes} depth={0} currentId={currentId} />
+  ))}
+</ul>

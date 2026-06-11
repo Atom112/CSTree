@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NodeNavigation from '../../components/NodeNavigation.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const nodes = await getCollection('node');
+  return nodes.map((node) => ({
+    params: { id: node.data.id },
+    props: { node },
+  }));
+}
+
+const { node } = Astro.props;
+const allNodes = await getCollection('node');
+const { Content } = await node.render();
+const data = node.data;
+---
+
+<BaseLayout title={data.title} description={data.summary} nodeId={data.id}>
+  <article class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <div class="flex flex-wrap items-center gap-2 mb-2">
+        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
+          {data.difficulty === 'beginner'
+            ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+            : data.difficulty === 'intermediate'
+              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+              : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'
+          }">
+          {data.difficulty === 'beginner' ? '入门' : data.difficulty === 'intermediate' ? '进阶' : '高级'}
+        </span>
+        {data.tags.map((tag) => (
+          <span class="text-xs text-gray-400 dark:text-gray-500">#{tag}</span>
+        ))}
+      </div>
+
+      <h1 class="text-3xl font-bold mb-3">{data.title}</h1>
+      <p class="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">{data.summary}</p>
+    </header>
+
+    <!-- Content -->
+    <div class="knowledge-content">
+      <Content />
+    </div>
+
+    <!-- Bottom Navigation -->
+    <NodeNavigation
+      node={data}
+      allNodes={allNodes.map((n) => n.data)}
+    />
+  </article>
+</BaseLayout>

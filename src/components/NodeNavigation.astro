@@ -1,0 +1,261 @@
+---
+export interface Props {
+  node: {
+    id: string;
+    title: string;
+    parent?: string | null;
+    children: string[];
+    related: string[];
+    prerequisites: string[];
+  };
+  allNodes: Array<{
+    id: string;
+    title: string;
+    summary: string;
+    parent?: string | null;
+    children: string[];
+    order: number;
+  }>;
+}
+
+const { node, allNodes } = Astro.props;
+const nodeMap = new Map(allNodes.map((n) => [n.id, n]));
+
+// Breadcrumbs: [root, ..., parent, this]
+function getBreadcrumbs(nodeId: string): Array<{ id: string; title: string }> {
+  const chain: Array<{ id: string; title: string }> = [];
+  let currentId: string | undefined = nodeId;
+  let guard = 0;
+  while (currentId && guard < 100) {
+    const n = nodeMap.get(currentId);
+    if (!n) break;
+    chain.unshift({ id: n.id, title: n.title });
+    currentId = n.parent ?? undefined;
+    guard++;
+  }
+  return chain;
+}
+
+const breadcrumbs = getBreadcrumbs(node.id);
+
+// Siblings (same parent, sorted by order, excluding self)
+const siblings = allNodes
+  .filter((n) => n.parent === node.parent && n.id !== node.id)
+  .sort((a, b) => a.order - b.order);
+
+// Current position among siblings
+const currentIdx = siblings.findIndex((s) => s.id === node.id);
+// Note: currentIdx will be -1 if this node is root (no siblings), which is fine
+
+const prevNode = currentIdx >= 0 ? siblings[currentIdx - 1] : null;
+const nextSibling = currentIdx >= 0 ? siblings[currentIdx + 1] : null;
+
+// First child (for "next" navigation)
+const firstChildNode = node.children.length > 0
+  ? nodeMap.get(node.children[0]) ?? null
+  : null;
+
+// Determine "next" target: first child > next sibling > parent's next sibling
+function findNextTarget(
+  nid: string,
+  depth: number
+): { id: string; title: string } | null {
+  if (depth > 10) return null;
+  const n = nodeMap.get(nid);
+  if (!n) return null;
+
+  // 1. First child
+  const children = (n.children ?? [])
+    .map((cid) => nodeMap.get(cid))
+    .filter(Boolean) as Array<{ id: string; title: string }>;
+  if (children.length > 0) return children[0];
+
+  // 2. Next sibling
+  const parentId = n.parent;
+  const siblingList = allNodes
+    .filter((s) => s.parent === parentId)
+    .sort((a, b) => a.order - b.order);
+  const myIdx = siblingList.findIndex((s) => s.id === nid);
+  if (myIdx >= 0 && myIdx < siblingList.length - 1) {
+    return siblingList[myIdx + 1];
+  }
+
+  // 3. Parent's next sibling (recurse up)
+  if (parentId) {
+    return findNextTarget(parentId, depth + 1);
+  }
+
+  return null;
+}
+
+const nextNode = firstChildNode ?? nextSibling ?? null;
+
+// Determine "prev" target: previous sibling's last descendant > previous sibling > parent
+function findLastDescendant(nid: string): { id: string; title: string } | null {
+  const n = nodeMap.get(nid);
+  if (!n) return null;
+  const children = (n.children ?? [])
+    .map((cid) => nodeMap.get(cid))
+    .filter(Boolean) as Array<{ id: string; title: string }>;
+  if (children.length > 0) {
+    return findLastDescendant(children[children.length - 1].id) ?? children[children.length - 1];
+  }
+  return n;
+}
+
+function findPrevTarget(nid: string): { id: string; title: string } | null {
+  const n = nodeMap.get(nid);
+  if (!n) return null;
+
+  const parentId = n.parent;
+  if (!parentId) {
+    // Reached root, no previous
+    return null;
+  }
+
+  const siblingList = allNodes
+    .filter((s) => s.parent === parentId)
+    .sort((a, b) => a.order - b.order);
+  const myIdx = siblingList.findIndex((s) => s.id === nid);
+
+  if (myIdx > 0) {
+    // Previous sibling's last descendant
+    return findLastDescendant(siblingList[myIdx - 1].id) ?? siblingList[myIdx - 1];
+  }
+
+  // First sibling → go to parent
+  return { id: parentId, title: nodeMap.get(parentId)?.title ?? parentId };
+}
+
+const prevNodeComputed = prevNode ?? (node.parent ? findPrevTarget(node.id) : null);
+---
+
+<nav class="mt-12 pt-6 border-t border-gray-200 dark:border-gray-800">
+  <!-- Breadcrumb trail -->
+  <div class="mb-4 text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center gap-1">
+    <span class="font-medium">路径：</span>
+    {breadcrumbs.map((crumb, i) => (
+      <>
+        {i > 0 && <span class="text-gray-300 dark:text-gray-600">→</span>}
+        {i < breadcrumbs.length - 1 ? (
+          <a
+            href={`/node/${crumb.id}`}
+            class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors underline decoration-dotted underline-offset-2"
+          >
+            {crumb.title}
+          </a>
+        ) : (
+          <span class="text-gray-800 dark:text-gray-200 font-medium">{crumb.title}</span>
+        )}
+      </>
+    ))}
+  </div>
+
+  <!-- Prev / Next navigation -->
+  <div class="grid grid-cols-2 gap-3">
+    <!-- Previous -->
+    {prevNodeComputed && (
+      <a
+        href={`/node/${prevNodeComputed.id}`}
+        class="nav-node-link justify-start text-left"
+      >
+        <div>
+          <div class="text-xs text-gray-400 mb-0.5">◀ 上一节</div>
+          <div class="font-medium truncate">{prevNodeComputed.title}</div>
+        </div>
+      </a>
+    )}
+    {!prevNodeComputed && <div />}
+
+    <!-- Next -->
+    {nextNode && (
+      <a
+        href={`/node/${nextNode.id}`}
+        class="nav-node-link justify-end text-right col-start-2"
+      >
+        <div>
+          <div class="text-xs text-gray-400 mb-0.5">下一节 ▶</div>
+          <div class="font-medium truncate">{nextNode.title}</div>
+        </div>
+      </a>
+    )}
+  </div>
+
+  <!-- Prerequisites -->
+  {node.prerequisites.length > 0 && (
+    <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+      <span class="text-sm font-medium text-amber-700 dark:text-amber-400">📖 建议先学习：</span>
+      <div class="inline-flex flex-wrap gap-2 ml-1 mt-1">
+        {node.prerequisites.map((pid) => (
+          <a href={`/node/${pid}`} class="nav-node-link text-xs">
+            {nodeMap.get(pid)?.title ?? pid}
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <!-- Children list -->
+  {node.children.length > 0 && (
+    <div class="mt-4">
+      <span class="text-sm font-medium text-gray-500 dark:text-gray-400">📚 本节包含：</span>
+      <div class="flex flex-wrap gap-2 mt-1">
+        {node.children.map((cid) => {
+          const child = nodeMap.get(cid);
+          if (!child) return null;
+          return (
+            <a
+              href={`/node/${cid}`}
+              class="nav-node-link text-xs"
+            >
+              {child.title}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  )}
+
+  <!-- Siblings -->
+  {siblings.length > 0 && (
+    <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
+      <span class="text-gray-500 dark:text-gray-400 font-medium">📑 同级：</span>
+      <div class="flex flex-wrap gap-1.5">
+        {siblings.map((s) => (
+          <a
+            key={s.id}
+            href={`/node/${s.id}`}
+            class="px-2.5 py-1 rounded-md text-xs transition-colors
+              bg-gray-100 dark:bg-gray-800
+              hover:bg-blue-100 dark:hover:bg-blue-900
+              text-gray-700 dark:text-gray-300"
+          >
+            {s.title}
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <!-- Related nodes -->
+  {node.related.length > 0 && (
+    <div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
+      <span class="text-gray-500 dark:text-gray-400 font-medium">🔗 关联：</span>
+      <div class="flex flex-wrap gap-1.5">
+        {node.related.map((rid) => (
+          <a
+            key={rid}
+            href={`/node/${rid}`}
+            class="px-2.5 py-1 rounded-md text-xs transition-colors
+              bg-purple-50 dark:bg-purple-900/20
+              hover:bg-purple-100 dark:hover:bg-purple-900/40
+              text-purple-700 dark:text-purple-300
+              border border-purple-200 dark:border-purple-800"
+          >
+            {nodeMap.get(rid)?.title ?? rid}
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+</nav>

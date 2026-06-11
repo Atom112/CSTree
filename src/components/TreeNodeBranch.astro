@@ -1,0 +1,75 @@
+---
+export interface Props {
+  nodeId: string;
+  nodeMap: Map<string, {
+    id: string;
+    title: string;
+    summary: string;
+    difficulty: string;
+    children: string[];
+    parent?: string | null;
+  }>;
+  getChildren: (id: string) => Array<{
+    id: string;
+    title: string;
+    summary: string;
+    difficulty: string;
+    children: string[];
+    parent?: string | null;
+  }>;
+  depth: number;
+}
+
+const { nodeId, nodeMap, getChildren, depth } = Astro.props;
+const node = nodeMap.get(nodeId);
+if (!node) return;
+
+const children = getChildren(nodeId);
+const indent = depth * 20;
+
+const difficultyColors: Record<string, string> = {
+  beginner: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+  intermediate: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+  advanced: 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300',
+};
+const difficultyLabels: Record<string, string> = {
+  beginner: '入门',
+  intermediate: '进阶',
+  advanced: '高级',
+};
+---
+
+<div style="margin-left: {indent}px">
+  <a
+    href={`/node/${nodeId}`}
+    class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+  >
+    {children.length > 0 ? (
+      <span class="text-xs text-gray-400 group-hover:text-blue-500 transition-colors">📂</span>
+    ) : (
+      <span class="text-xs text-gray-400">📄</span>
+    )}
+    <span class="font-medium text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+      {node.title}
+    </span>
+    <span class="text-xs {difficultyColors[node.difficulty] || difficultyColors.beginner} px-1.5 py-0.5 rounded">
+      {difficultyLabels[node.difficulty] || node.difficulty}
+    </span>
+    {!node.parent && (
+      <span class="text-xs text-gray-400 dark:text-gray-500">🌱 根节点</span>
+    )}
+  </a>
+
+  {children.length > 0 && (
+    <div class="border-l-2 border-gray-200 dark:border-gray-700 ml-2 pl-2 mt-1 mb-1">
+      {children.map((child) => (
+        <TreeNodeBranch
+          nodeId={child.id}
+          nodeMap={nodeMap}
+          getChildren={getChildren}
+          depth={depth + 1}
+        />
+      ))}
+    </div>
+  )}
+</div>

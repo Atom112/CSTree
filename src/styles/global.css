@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100;
+  }
+
+  /* Knowledge cross-reference link style */
+  a[data-knowledge-node] {
+    @apply text-blue-600 dark:text-blue-400 underline decoration-dotted underline-offset-2;
+    @apply hover:text-blue-800 dark:hover:text-blue-300 transition-colors;
+  }
+
+  /* Navigation links in bottom bar */
+  .nav-node-link {
+    @apply inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm;
+    @apply bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700;
+    @apply transition-colors no-underline text-gray-700 dark:text-gray-300;
+  }
+}
+
+@layer components {
+  .knowledge-content h1 {
+    @apply text-3xl font-bold mb-6 mt-8;
+  }
+  .knowledge-content h2 {
+    @apply text-2xl font-bold mb-4 mt-6;
+  }
+  .knowledge-content h3 {
+    @apply text-xl font-semibold mb-3 mt-5;
+  }
+  .knowledge-content p {
+    @apply mb-4 leading-relaxed;
+  }
+  .knowledge-content code {
+    @apply bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+  .knowledge-content pre {
+    @apply bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto mb-4;
+  }
+  .knowledge-content ul {
+    @apply list-disc pl-6 mb-4 space-y-1;
+  }
+  .knowledge-content ol {
+    @apply list-decimal pl-6 mb-4 space-y-1;
+  }
+  .knowledge-content blockquote {
+    @apply border-l-4 border-blue-500 pl-4 italic my-4 text-gray-600 dark:text-gray-400;
+  }
+}

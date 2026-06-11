@@ -1,0 +1,124 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TreeNodeBranch from '../components/TreeNodeBranch.astro';
+import { getCollection } from 'astro:content';
+import { resolveGraph, topologicalSort } from '../utils/graph';
+import { fromCollection } from '../utils/types';
+
+const entries = await getCollection('node');
+const nodeData = fromCollection(entries);
+const graph = resolveGraph(nodeData);
+
+const rootNodes = graph.rootNodes;
+const sortedNodes = topologicalSort(nodeData);
+
+// Stats
+const totalNodes = nodeData.length;
+const rootCount = rootNodes.length;
+const leafCount = nodeData.filter((n) => {
+  const children = graph.getChildren(n.id);
+  return children.length === 0;
+}).length;
+const maxDepth = Math.max(...nodeData.map((n) => graph.getBreadcrumbs(n.id).length));
+---
+
+<BaseLayout title="节点目录">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-2">知识节点目录</h1>
+    <p class="text-gray-600 dark:text-gray-400 mb-6">浏览所有知识节点</p>
+
+    <!-- Stats cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+      <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-center">
+        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{totalNodes}</div>
+        <div class="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5">总节点数</div>
+      </div>
+      <div class="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-center">
+        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{rootCount}</div>
+        <div class="text-xs text-green-600/70 dark:text-green-400/70 mt-0.5">根节点</div>
+      </div>
+      <div class="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 text-center">
+        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{leafCount}</div>
+        <div class="text-xs text-purple-600/70 dark:text-purple-400/70 mt-0.5">叶子节点</div>
+      </div>
+      <div class="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-center">
+        <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{maxDepth}</div>
+        <div class="text-xs text-amber-600/70 dark:text-amber-400/70 mt-0.5">最大深度</div>
+      </div>
+    </div>
+
+    <!-- Tree View -->
+    <section class="mb-10">
+      <h2 class="text-xl font-bold mb-4">🌳 按树结构浏览</h2>
+      <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-4">
+        {rootNodes.map((root) => (
+          <TreeNodeBranch
+            nodeId={root.id}
+            nodeMap={graph.nodeMap}
+            getChildren={graph.getChildren}
+            depth={0}
+          />
+        ))}
+      </div>
+    </section>
+
+    <!-- Learning Path -->
+    <section>
+      <h2 class="text-xl font-bold mb-4">📋 推荐学习路径</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        基于前置依赖关系的拓扑排序，建议按此顺序学习
+      </p>
+      <div class="space-y-2">
+        {sortedNodes.map((n, i) => {
+          const children = graph.getChildren(n.id);
+          return (
+            <div class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+              <span class="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-bold mt-0.5">
+                {i + 1}
+              </span>
+              <div class="flex-1 min-w-0">
+                <a
+                  href={`/node/${n.id}`}
+                  class="font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {n.title}
+                </a>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                  {n.summary}
+                </p>
+                <div class="flex flex-wrap gap-1.5 mt-1">
+                  {n.tags.map((tag) => (
+                    <span class="text-xs text-gray-400 dark:text-gray-500">#{tag}</span>
+                  ))}
+                  {children.length > 0 && (
+                    <span class="text-xs text-blue-400">{children.length} 个子节点</span>
+                  )}
+                  {n.prerequisites.length > 0 && (
+                    <span class="text-xs text-amber-400">{n.prerequisites.length} 个前置</span>
+                  )}
+                </div>
+              </div>
+              <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded
+                {n.difficulty === 'beginner'
+                  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                  : n.difficulty === 'intermediate'
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                    : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'
+                }">
+                {n.difficulty === 'beginner' ? '入门' : n.difficulty === 'intermediate' ? '进阶' : '高级'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>

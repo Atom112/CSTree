@@ -1,0 +1,64 @@
+---
+export interface Props {
+  nodes: Array<{
+    id: string;
+    title: string;
+    summary: string;
+    parent?: string;
+    children: string[];
+    related: string[];
+  }>;
+}
+
+const { nodes } = Astro.props;
+const rootNodes = nodes.filter((n) => !n.parent);
+---
+
+<div class="knowledge-tree-container w-full h-full">
+  <!-- Mobile: CSS collapsible list (placeholder) -->
+  <div class="block lg:hidden">
+    <p class="text-gray-400 text-sm mb-4">🔍 知识树导航（移动端折叠列表将在 Phase 4 实现）</p>
+    <ul class="space-y-2">
+      {rootNodes.map((root) => (
+        <li>
+          <a
+            href={`/node/${root.id}`}
+            class="block px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+          >
+            <span class="font-medium">{root.title}</span>
+            <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">{root.summary}</span>
+          </a>
+          {root.children.length > 0 && (
+            <ul class="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+              {root.children.map((childId) => {
+                const child = nodes.find((n) => n.id === childId);
+                if (!child) return null;
+                return (
+                  <li>
+                    <a
+                      href={`/node/${child.id}`}
+                      class="block px-3 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-sm transition-colors"
+                    >
+                      {child.title}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <!-- Desktop: React interactive D3 tree -->
+  <div class="hidden lg:block w-full h-[500px]" id="knowledge-tree-desktop">
+    <div class="flex items-center justify-center h-full border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl">
+      <div class="text-center">
+        <p class="text-4xl mb-2">🌳</p>
+        <p class="text-gray-400">交互式知识树（D3.js）将在 Phase 4 实现</p>
+        <p class="text-sm text-gray-500 mt-1">当前共 {nodes.length} 个知识节点</p>
+      </div>
+    </div>
+  </div>
+</div>

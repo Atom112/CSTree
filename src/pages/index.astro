@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import KnowledgeTree from '../components/KnowledgeTree.astro';
+import { getCollection } from 'astro:content';
+
+const nodes = await getCollection('node');
+---
+
+<BaseLayout title="知识树">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <section class="text-center mb-12">
+      <h1 class="text-4xl font-bold mb-4">计算机科学知识树</h1>
+      <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+        从晶体管到操作系统，从二进制到编译器——自底向上，系统化学习计算机科学
+      </p>
+    </section>
+
+    <section class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 min-h-[500px]">
+      <KnowledgeTree nodes={nodes.map(n => n.data)} />
+    </section>
+
+    <section class="mt-12">
+      <h2 class="text-2xl font-bold mb-6">知识领域</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <a href="/node/hardware" class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
+          <h3 class="font-bold text-lg mb-1">🔌 硬件基础</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">逻辑门、触发器、寄存器、ALU</p>
+        </a>
+        <a href="/node/assembly" class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
+          <h3 class="font-bold text-lg mb-1">⚙️ 汇编语言</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">指令集、寻址模式、调用约定</p>
+        </a>
+        <a href="/node/os" class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
+          <h3 class="font-bold text-lg mb-1">🖥️ 操作系统</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">进程管理、内存管理、文件系统</p>
+        </a>
+        <a href="/node/compilers" class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
+          <h3 class="font-bold text-lg mb-1">🔧 编译器</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">词法分析、语法分析、代码生成</p>
+        </a>
+        <a href="/node/networking" class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
+          <h3 class="font-bold text-lg mb-1">🌐 计算机网络</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">TCP/IP、HTTP、路由协议</p>
+        </a>
+        <a href="/node/databases" class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
+          <h3 class="font-bold text-lg mb-1">🗄️ 数据库</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">SQL、索引、事务、B+树</p>
+        </a>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
