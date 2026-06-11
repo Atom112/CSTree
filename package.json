@@ -10,10 +10,13 @@
     "validate": "npx tsx src/scripts/validate-graph.ts",
     "pagefind": "npx pagefind --site dist --output-subdir _pagefind",
     "sitemap": "npx tsx src/scripts/generate-sitemap.ts",
-    "preview": "astro preview",
-    "check": "astro check"
+    "preview": "npm run build && wrangler dev",
+    "check": "astro check",
+    "deploy": "npm run build && wrangler deploy",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "11",
     "astro": "^4.16.0"
   },
   "devDependencies": {
@@ -36,6 +39,7 @@
     "tailwindcss": "^3.4.0",
     "tsx": "^4.22.4",
     "typescript": "^5.6.0",
-    "unified": "^11.0.0"
+    "unified": "^11.0.0",
+    "wrangler": "^4.99.0"
   }
 }
