@@ -20,10 +20,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.0",
-    "@astrojs/cloudflare": "^13.7.0",
     "@astrojs/mdx": "^3.1.0",
     "@astrojs/react": "^3.6.0",
-    "@astrojs/sitemap": "^3.2.0",
     "@astrojs/tailwind": "^5.1.0",
     "@pagefind/default-ui": "^1.5.2",
     "@types/d3": "^7.4.0",
