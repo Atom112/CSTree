@@ -38,22 +38,39 @@ function getBreadcrumbs(nodeId: string): Array<{ id: string; title: string }> {
 
 const breadcrumbs = getBreadcrumbs(node.id);
 
-// Siblings (same parent, sorted by order, excluding self)
+// Siblings (same parent, sorted by order, excluding self, for "同级" display)
 const siblings = allNodes
   .filter((n) => n.parent === node.parent && n.id !== node.id)
   .sort((a, b) => a.order - b.order);
 
-// Current position among siblings
-const currentIdx = siblings.findIndex((s) => s.id === node.id);
-// Note: currentIdx will be -1 if this node is root (no siblings), which is fine
+// Full sibling list (including self) for position calculation
+const allSiblingsWithSelf = allNodes
+  .filter((n) => n.parent === node.parent)
+  .sort((a, b) => a.order - b.order);
 
-const prevNode = currentIdx >= 0 ? siblings[currentIdx - 1] : null;
-const nextSibling = currentIdx >= 0 ? siblings[currentIdx + 1] : null;
+// Current position among ALL siblings (including self)
+const currentIdx = allSiblingsWithSelf.findIndex((s) => s.id === node.id);
+
+const prevSibling = currentIdx > 0 ? allSiblingsWithSelf[currentIdx - 1] : null;
+const nextSibling = currentIdx >= 0 && currentIdx < allSiblingsWithSelf.length - 1
+  ? allSiblingsWithSelf[currentIdx + 1]
+  : null;
+
+// Auto-derive children from allNodes (parent field), fallback to explicit children
+function getChildrenList(nid: string): Array<{ id: string; title: string }> {
+  const explicit = (nodeMap.get(nid)?.children ?? []).map((cid) => nodeMap.get(cid)).filter(Boolean) as Array<{ id: string; title: string }>;
+  const implicit = allNodes
+    .filter((n) => n.parent === nid && !explicit.find((e) => e.id === n.id))
+    .map((n) => ({ id: n.id, title: n.title }));
+  return [...explicit, ...implicit].sort((a, b) => {
+    const na = nodeMap.get(a.id); const nb = nodeMap.get(b.id);
+    return (na?.order ?? 0) - (nb?.order ?? 0);
+  });
+}
 
 // First child (for "next" navigation)
-const firstChildNode = node.children.length > 0
-  ? nodeMap.get(node.children[0]) ?? null
-  : null;
+const derivedChildren = getChildrenList(node.id);
+const firstChildNode = derivedChildren.length > 0 ? derivedChildren[0] : null;
 
 // Determine "next" target: first child > next sibling > parent's next sibling
 function findNextTarget(
@@ -64,10 +81,13 @@ function findNextTarget(
   const n = nodeMap.get(nid);
   if (!n) return null;
 
-  // 1. First child
-  const children = (n.children ?? [])
-    .map((cid) => nodeMap.get(cid))
-    .filter(Boolean) as Array<{ id: string; title: string }>;
+  // 1. First child (auto-derived)
+  const children = nid === node.id
+    ? derivedChildren
+    : allNodes
+        .filter((s) => s.parent === nid)
+        .sort((a, b) => a.order - b.order)
+        .map((s) => ({ id: s.id, title: s.title }));
   if (children.length > 0) return children[0];
 
   // 2. Next sibling
@@ -88,7 +108,7 @@ function findNextTarget(
   return null;
 }
 
-const nextNode = firstChildNode ?? nextSibling ?? null;
+const nextNode = firstChildNode ?? nextSibling ?? (node.parent ? findNextTarget(node.id, 0) : null);
 
 // Determine "prev" target: previous sibling's last descendant > previous sibling > parent
 function findLastDescendant(nid: string): { id: string; title: string } | null {
@@ -127,7 +147,7 @@ function findPrevTarget(nid: string): { id: string; title: string } | null {
   return { id: parentId, title: nodeMap.get(parentId)?.title ?? parentId };
 }
 
-const prevNodeComputed = prevNode ?? (node.parent ? findPrevTarget(node.id) : null);
+const prevNodeComputed = prevSibling ?? (node.parent ? findPrevTarget(node.id) : null);
 ---
 
 <nav class="mt-12 pt-6 border-t border-gray-200 dark:border-gray-800">
@@ -196,22 +216,18 @@ const prevNodeComputed = prevNode ?? (node.parent ? findPrevTarget(node.id) : nu
   )}
 
   <!-- Children list -->
-  {node.children.length > 0 && (
+  {derivedChildren.length > 0 && (
     <div class="mt-4">
       <span class="text-sm font-medium text-gray-500 dark:text-gray-400">📚 本节包含：</span>
       <div class="flex flex-wrap gap-2 mt-1">
-        {node.children.map((cid) => {
-          const child = nodeMap.get(cid);
-          if (!child) return null;
-          return (
-            <a
-              href={`/node/${cid}`}
-              class="nav-node-link text-xs"
-            >
-              {child.title}
-            </a>
-          );
-        })}
+        {derivedChildren.map((child) => (
+          <a
+            href={`/node/${child.id}`}
+            class="nav-node-link text-xs"
+          >
+            {child.title}
+          </a>
+        ))}
       </div>
     </div>
   )}

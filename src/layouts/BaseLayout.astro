@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Logo from '../components/Logo.astro';
 
 export interface Props {
   title: string;
@@ -33,6 +34,9 @@ const canonicalUrl = nodeId
     <meta name="color-scheme" content="light dark" />
     <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="/katex.css" />
 
     <!-- Open Graph -->
     <meta property="og:title" content={siteTitle} />
@@ -89,9 +93,8 @@ const canonicalUrl = nodeId
     <!-- Header -->
     <header class="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
       <nav class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        <a href="/" class="font-bold text-lg hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap">
-          🌳 CSTree
-        </a>
+        <Logo />
+
         <div class="flex items-center gap-3 text-sm">
           <a href="/" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">知识树</a>
           <a href="/nodes" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">目录</a>
@@ -100,11 +103,13 @@ const canonicalUrl = nodeId
           <!-- Dark mode toggle -->
           <button
             id="theme-toggle"
-            class="ml-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-lg"
+            class="ml-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             aria-label="切换暗色模式"
             title="切换暗色模式"
           >
-            <span id="theme-icon" class="block">🌙</span>
+            <span id="theme-icon" class="block w-5 h-5 text-gray-600 dark:text-gray-400">
+              <!-- Sun/Moon SVG toggled by JS -->
+            </span>
           </button>
         </div>
       </nav>
@@ -123,14 +128,34 @@ const canonicalUrl = nodeId
       </div>
     </footer>
 
-    <!-- Dark mode toggle script -->
+    <!-- KaTeX (local) -->
+    <script src="/katex.js" defer></script>
+    <script src="/katex-auto-render.js" defer></script>
     <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof renderMathInElement === 'function') {
+          renderMathInElement(document.body, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false}
+            ],
+            throwOnError: false
+          });
+        }
+      });
+    </script>
+
+    <!-- Dark mode toggle script (SVG icons) -->
+    <script>
+      const SUN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+      const MOON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
       const btn = document.getElementById('theme-toggle');
       const icon = document.getElementById('theme-icon');
       if (btn && icon) {
         const updateIcon = () => {
           const isDark = document.documentElement.classList.contains('dark');
-          icon.textContent = isDark ? '☀️' : '🌙';
+          icon.innerHTML = isDark ? SUN_SVG : MOON_SVG;
         };
         updateIcon();
         btn.addEventListener('click', () => {

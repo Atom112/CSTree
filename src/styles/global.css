@@ -51,6 +51,59 @@
     @apply bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700;
     @apply transition-colors no-underline text-gray-700 dark:text-gray-300;
   }
+
+  /* ── Custom Scrollbar ── */
+  :root {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  :root.dark {
+    scrollbar-color: #475569 transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+  :root.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+  }
+  :root.dark ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* ── KaTeX dark mode fix ── */
+  .dark .katex .mathnormal,
+  .dark .katex .mathit,
+  .dark .katex .mathrm {
+    color: #e2e8f0;
+  }
+  .dark .katex .vlist-t {
+    color: #e2e8f0;
+  }
+  .dark .katex .mord,
+  .dark .katex .mbin,
+  .dark .katex .mrel,
+  .dark .katex .mspace {
+    color: #e2e8f0;
+  }
+  .dark .katex .mord.text {
+    color: #94a3b8;
+  }
 }
 
 @layer components {
@@ -83,5 +136,27 @@
   }
   .knowledge-content blockquote {
     @apply border-l-4 border-blue-500 pl-4 italic my-4 text-gray-600 dark:text-gray-400;
+  }
+
+  /* ── Knowledge content tables ── */
+  .knowledge-content table {
+    @apply w-full border-collapse my-4 text-sm;
+  }
+
+  .knowledge-content th {
+    @apply bg-gray-100 dark:bg-gray-800 font-semibold text-left;
+    @apply px-3 py-2 border border-gray-300 dark:border-gray-700;
+  }
+
+  .knowledge-content td {
+    @apply px-3 py-2 border border-gray-300 dark:border-gray-700;
+  }
+
+  .knowledge-content tr:nth-child(even) td {
+    @apply bg-gray-50 dark:bg-gray-900/50;
+  }
+
+  .knowledge-content tr:hover td {
+    @apply bg-blue-50 dark:bg-blue-900/10;
   }
 }

@@ -1,0 +1,45 @@
+---
+export interface Props {
+  size?: number;
+}
+const { size = 28 } = Astro.props;
+---
+
+<a href="/" class="flex items-center gap-2 font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors no-underline">
+  <!-- Knowledge Tree Logo SVG -->
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 28 28"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    class="text-blue-600 dark:text-blue-400 flex-shrink-0"
+  >
+    <!-- Level 1 (root) -->
+    <circle cx="14" cy="22" r="2.5" fill="currentColor" />
+    <!-- Level 1→2 connectors -->
+    <line x1="14" y1="19.5" x2="8" y2="14" />
+    <line x1="14" y1="19.5" x2="20" y2="14" />
+    <!-- Level 2 -->
+    <circle cx="8" cy="14" r="2.5" fill="currentColor" />
+    <circle cx="20" cy="14" r="2.5" fill="currentColor" />
+    <!-- Level 2 cross-link -->
+    <line x1="10.5" y1="14" x2="17.5" y2="14" stroke-dasharray="2 2" opacity="0.5" />
+    <!-- Level 2→3 connectors -->
+    <line x1="8" y1="11.5" x2="5" y2="6" />
+    <line x1="8" y1="11.5" x2="12" y2="6" />
+    <line x1="20" y1="11.5" x2="16" y2="6" />
+    <line x1="20" y1="11.5" x2="23" y2="6" />
+    <!-- Level 3 (leaves) -->
+    <circle cx="5" cy="6" r="2.5" fill="currentColor" />
+    <circle cx="12" cy="6" r="2.5" fill="currentColor" />
+    <circle cx="16" cy="6" r="2.5" fill="currentColor" />
+    <circle cx="23" cy="6" r="2.5" fill="currentColor" />
+    <!-- Level 2→3 cross-links -->
+    <line x1="12" y1="8.5" x2="16" y2="8.5" stroke-dasharray="2 2" opacity="0.4" />
+  </svg>
+  <span class="text-gray-900 dark:text-gray-100">CSTree</span>
+</a>
