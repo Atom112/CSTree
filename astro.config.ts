@@ -5,21 +5,27 @@ import mdx from '@astrojs/mdx';
 import { remarkWikiLink } from './src/plugins/remark-wiki-link';
 import { rehypeKnowledgeNode } from './src/plugins/rehype-knowledge-node';
 
+import cloudflare from "@astrojs/cloudflare";
+
 export default defineConfig({
   site: 'https://cstree.locx-loch.top',
-  output: 'static',
+  output: "hybrid",
+
   integrations: [
     react(),
     tailwind(),
     mdx(),
   ],
+
   markdown: {
     remarkPlugins: [remarkWikiLink],
     rehypePlugins: [rehypeKnowledgeNode],
   },
+
   build: {
     format: 'directory',
   },
+
   vite: {
     build: {
       rollupOptions: {
@@ -27,4 +33,6 @@ export default defineConfig({
       },
     },
   },
+
+  adapter: cloudflare()
 });
