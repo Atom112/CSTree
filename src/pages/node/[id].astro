@@ -17,7 +17,13 @@ const { Content } = await node.render();
 const data = node.data;
 ---
 
-<BaseLayout title={data.title} description={data.summary} nodeId={data.id}>
+<BaseLayout
+  title={data.title}
+  description={data.summary}
+  nodeId={data.id}
+  publishedAt={data.createdAt?.toISOString()}
+  updatedAt={data.updatedAt?.toISOString()}
+>
   <article class="max-w-4xl mx-auto px-4 py-8">
     <!-- Header -->
     <header class="mb-8">

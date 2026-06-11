@@ -1,20 +1,125 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const nodes = await getCollection('node');
+const tags = [...new Set(nodes.flatMap((n) => n.data.tags))].sort();
 ---
 
 <BaseLayout title="搜索">
   <div class="max-w-4xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">搜索知识点</h1>
-    <div class="mb-8">
-      <input
-        type="search"
-        id="search-input"
-        placeholder="输入关键词搜索..."
-        class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+    <h1 class="text-3xl font-bold mb-2">搜索知识点</h1>
+    <p class="text-gray-500 dark:text-gray-400 mb-6">
+      搜索 {nodes.length} 个知识节点 · {tags.length} 个标签
+    </p>
+
+    <!-- Pagefind search placeholder -->
+    <div id="search" class="pagefind-ui-container mb-8">
+      <p class="text-gray-400 text-sm">
+        搜索索引加载中...
+        <noscript>（需要 JavaScript 支持搜索）</noscript>
+      </p>
     </div>
-    <div id="search-results" class="space-y-4">
-      <p class="text-gray-500 dark:text-gray-400">Pagefind 搜索将在 Phase 5 集成</p>
-    </div>
+
+    <!-- Tag index -->
+    <section class="mt-12">
+      <h2 class="text-xl font-bold mb-4">🏷️ 标签索引</h2>
+      <div class="flex flex-wrap gap-2">
+        {tags.map((tag) => (
+          <button
+            class="tag-btn px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+            data-tag={tag}
+          >
+            #{tag}
+            <span class="text-xs text-gray-400 ml-1">
+              ({nodes.filter((n) => n.data.tags.includes(tag)).length})
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
   </div>
 </BaseLayout>
+
+<script>
+  // Initialize Pagefind UI at runtime (import path is generated after build)
+  (async function () {
+    const searchContainer = document.getElementById('search');
+    if (!searchContainer) return;
+
+    try {
+      // Dynamic import — Vite won't resolve this at build time
+      const pfPath = '/_pagefind/pagefind.js';
+      const mod = await import(/* @vite-ignore */ pfPath);
+
+      // Pagefind UI attaches to window
+      if (typeof window.PagefindUI === 'undefined') {
+        searchContainer.innerHTML =
+          '<p class="text-gray-400 text-sm">搜索索引不可用 — 请运行 <code>npm run build</code> 生成索引</p>';
+        return;
+      }
+
+      const ui = new window.PagefindUI({
+        element: '#search',
+        showSubResults: true,
+        showImages: false,
+        resetStyles: false,
+        autofocus: true,
+        translations: {
+          placeholder: '搜索知识点...',
+          clear_search: '清除',
+          load_more: '加载更多结果',
+          search_label: '搜索此站点',
+          zero_results: '未找到匹配结果',
+          many_results: '找到 {total} 个结果',
+          one_result: '找到 1 个结果',
+        },
+      });
+
+      // Auto-search for ?tag=xxx query param
+      const params = new URLSearchParams(window.location.search);
+      const tagQuery = params.get('tag');
+      if (tagQuery) {
+        const input = searchContainer.querySelector('input');
+        if (input) {
+          input.value = tagQuery;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+    } catch (e) {
+      console.warn('Pagefind init error:', e);
+      searchContainer.innerHTML =
+        '<p class="text-gray-400 text-sm">搜索索引不可用 — 请运行 <code>npm run build</code> 生成索引</p>';
+    }
+  })();
+
+  // Tag button click → trigger search
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('.tag-btn') as HTMLElement | null;
+    if (!btn) return;
+    const tag = btn.dataset.tag;
+    if (!tag) return;
+
+    const input = document.querySelector('#search input') as HTMLInputElement | null;
+    if (input) {
+      input.value = tag;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.focus();
+    }
+  });
+</script>
+
+<style>
+  .pagefind-ui-container { @apply w-full; }
+
+  /* Dark mode overrides for Pagefind UI */
+  .dark .pagefind-ui__search-input {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-color: #475569;
+  }
+  .dark .pagefind-ui__result { border-color: #334155; }
+  .dark .pagefind-ui__result-title { color: #60a5fa; }
+  .dark .pagefind-ui__result-excerpt { color: #94a3b8; }
+  .dark .pagefind-ui__search-clear { color: #94a3b8; }
+</style>
