@@ -18,8 +18,8 @@ const { title, description, nodeId, structuredData, publishedAt, updatedAt } = A
 const siteTitle = title ? `${title} | CSTree` : 'CSTree — 计算机科学知识树';
 const desc = description || '自底向上学习计算机科学——从晶体管到操作系统，从二进制到编译器';
 const canonicalUrl = nodeId
-  ? `https://cstree.example.com/node/${nodeId}/`
-  : 'https://cstree.example.com/';
+  ? `https://cstree.pages.dev/node/${nodeId}/`
+  : 'https://cstree.pages.dev/';
 ---
 
 <!DOCTYPE html>
@@ -62,7 +62,7 @@ const canonicalUrl = nodeId
         '@type': 'WebSite',
         name: 'CSTree',
         description: '自底向上学习计算机科学',
-        url: 'https://cstree.example.com/',
+        url: 'https://cstree.pages.dev/',
       },
       ...(nodeId ? [{
         '@context': 'https://schema.org',
