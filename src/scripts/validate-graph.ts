@@ -32,6 +32,11 @@ interface NodeFrontmatter {
   tags: string[];
 }
 
+interface NodeEntry {
+  frontmatter: NodeFrontmatter;
+  body: string;
+}
+
 /**
  * Parse frontmatter from a markdown file manually.
  * Keeps this script dependency-free for reliability.
@@ -107,20 +112,21 @@ function parseFrontmatter(filePath: string): { data: Record<string, unknown>; co
   return { data, content };
 }
 
-function collectNodes(dir: string): NodeFrontmatter[] {
+function collectNodes(dir: string): { nodes: NodeFrontmatter[]; entries: NodeEntry[] } {
   const nodes: NodeFrontmatter[] = [];
+  const entries: NodeEntry[] = [];
 
   function walk(directory: string) {
-    const entries = fs.readdirSync(directory, { withFileTypes: true });
-    for (const entry of entries) {
+    const entries_ = fs.readdirSync(directory, { withFileTypes: true });
+    for (const entry of entries_) {
       const fullPath = path.join(directory, entry.name);
       if (entry.isDirectory()) {
         walk(fullPath);
       } else if (entry.isFile() && /\.md$/.test(entry.name)) {
-        if (entry.name.startsWith('_')) continue; // skip partials
-        const { data } = parseFrontmatter(fullPath);
+        if (entry.name.startsWith('_')) continue;
+        const { data, content } = parseFrontmatter(fullPath);
         if (data.id) {
-          nodes.push({
+          const node = {
             id: String(data.id),
             title: String(data.title || ''),
             summary: String(data.summary || ''),
@@ -131,14 +137,16 @@ function collectNodes(dir: string): NodeFrontmatter[] {
             related: Array.isArray(data.related) ? data.related.map(String) : [],
             prerequisites: Array.isArray(data.prerequisites) ? data.prerequisites.map(String) : [],
             tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
-          });
+          };
+          nodes.push(node);
+          entries.push({ frontmatter: node, body: content });
         }
       }
     }
   }
 
   walk(dir);
-  return nodes;
+  return { nodes, entries };
 }
 
 function validate(nodes: NodeFrontmatter[]): { valid: boolean; errors: string[]; warnings: string[] } {
@@ -208,12 +216,54 @@ function validate(nodes: NodeFrontmatter[]): { valid: boolean; errors: string[];
   return { valid: errors.length === 0, errors, warnings };
 }
 
+/**
+ * Scan markdown body for [[node-id]] / [[node-id|text]] patterns
+ * and validate that referenced nodes exist.
+ */
+function validateWikiLinks(entries: NodeEntry[], nodeIds: Set<string>): string[] {
+  const errors: string[] = [];
+  const wikiLinkRe = /\[\[([\w-]+)(?:\|[^\[\]]+)?\]\]/g;
+  const atLinkRe = /\[@([\w-]+)\]/g;
+
+  for (const entry of entries) {
+    const body = entry.body;
+
+    // Reset regex state
+    wikiLinkRe.lastIndex = 0;
+    atLinkRe.lastIndex = 0;
+
+    let match: RegExpExecArray | null;
+
+    while ((match = wikiLinkRe.exec(body)) !== null) {
+      const refId = match[1];
+      if (!nodeIds.has(refId)) {
+        errors.push(`[${entry.frontmatter.id}] body contains [[${refId}]] but node "${refId}" does not exist`);
+      }
+    }
+
+    while ((match = atLinkRe.exec(body)) !== null) {
+      const refId = match[1];
+      if (!nodeIds.has(refId)) {
+        errors.push(`[${entry.frontmatter.id}] body contains [@${refId}] but node "${refId}" does not exist`);
+      }
+    }
+  }
+
+  return errors;
+}
+
 // Main
-const nodes = collectNodes(CONTENT_DIR);
+const { nodes, entries } = collectNodes(CONTENT_DIR);
 console.log(`\n📊 CSTree Graph Validation`);
 console.log(`   Found ${nodes.length} node(s) in ${CONTENT_DIR}\n`);
 
 const result = validate(nodes);
+const nodeIds = new Set(nodes.map((n) => n.id));
+
+// Validate inline wiki-links in markdown body
+const wikiLinkErrors = validateWikiLinks(entries, nodeIds);
+result.errors.push(...wikiLinkErrors);
+result.valid = result.valid && wikiLinkErrors.length === 0;
 
 if (result.warnings.length > 0) {
   console.log(`⚠️  ${result.warnings.length} warning(s):`);

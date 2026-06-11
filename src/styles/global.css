@@ -11,10 +11,38 @@
     @apply bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100;
   }
 
-  /* Knowledge cross-reference link style */
+  /* ── Knowledge cross-reference links ── */
   a[data-knowledge-node] {
     @apply text-blue-600 dark:text-blue-400 underline decoration-dotted underline-offset-2;
-    @apply hover:text-blue-800 dark:hover:text-blue-300 transition-colors;
+    @apply hover:text-blue-700 dark:hover:text-blue-300 transition-all duration-150;
+    @apply font-medium;
+    position: relative;
+  }
+
+  /* Hover: subtle highlight background */
+  a[data-knowledge-node]::after {
+    content: '';
+    position: absolute;
+    inset: -2px -4px;
+    border-radius: 4px;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: -1;
+  }
+
+  a[data-knowledge-node]:hover::after {
+    opacity: 0.08;
+  }
+
+  /* Highlight pulse (triggered by JS, optional) */
+  a[data-knowledge-node].kn-highlight {
+    animation: kn-pulse 1.5s ease-out;
+  }
+
+  @keyframes kn-pulse {
+    0% { background-color: rgba(59, 130, 246, 0.2); }
+    100% { background-color: transparent; }
   }
 
   /* Navigation links in bottom bar */
@@ -37,6 +65,9 @@
   }
   .knowledge-content p {
     @apply mb-4 leading-relaxed;
+  }
+  .knowledge-content a:not(.nav-node-link):not(.no-kn-icon)::before {
+    display: none; /* Only show 🔗 for data-knowledge-node links */
   }
   .knowledge-content code {
     @apply bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono;

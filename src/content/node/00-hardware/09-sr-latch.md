@@ -61,9 +61,9 @@ R ──╰─[NAND]─┬── Q̅
 
 SR 锁存器虽然简单，但它是所有计算机存储器的原点：
 
-- 多个锁存器 → [[../hardware/register|寄存器]]
+- 多个锁存器 → [[register|寄存器]]
 - 寄存器阵列 → RAM
-- 加上时钟控制 → [[../hardware/d-flipflop|D触发器]]
+- 加上时钟控制 → [[d-flipflop|D触发器]]
 - 更复杂的时序控制 → CPU 中的状态机
 
 ## 小结
