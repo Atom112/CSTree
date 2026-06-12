@@ -284,11 +284,12 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
     layoutRef.current = tl;
 
     // Build SVG content
-    const bgColor = isDark ? '#111827' : '#ffffff';
     const pal = isDark ? DIFF_COLORS_DARK : DIFF_COLORS;
     let html = `<style>
       .tree-content { vector-effect: non-scaling-stroke; }
       .link { fill: none; }
+      .link-bg { stroke: #ffffff; }
+      .dark .link-bg { stroke: #111827; }
       .node-group { cursor: pointer; }
       .virtual-root { cursor: default; }
       .node-hit { fill: transparent; }
@@ -297,6 +298,9 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
       .node-line { stroke-linecap: round; vector-effect: non-scaling-stroke; }
       .node-text { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; user-select: none; }
       .badge-text { font-family: system-ui, sans-serif; font-size: 9px; font-weight: 700; user-select: none; }
+      .dark .node-text { fill: #cbd5e1 !important; }
+      .dark .node-group:hover .node-text { fill: #60a5fa !important; }
+      .dark .badge-text { fill: #94a3b8 !important; }
     </style>
     <g class="tree-content">`;
 
@@ -306,7 +310,7 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
       b.links.forEach((l: any) => {
         d += `M${l.xt} ${l.yt}L${l.xb - l.c1} ${l.yt}A${l.c1} ${l.c1} 90 0 1 ${l.xb} ${l.yt + l.c1}L${l.xb} ${l.ys - l.c2}A${l.c2} ${l.c2} 90 0 0 ${l.xb + l.c2} ${l.ys}L${l.xs} ${l.ys}`;
       });
-      html += `<path class="link" d="${d}" stroke="${bgColor}" stroke-width="5"/>`;
+      html += `<path class="link link-bg" d="${d}" stroke-width="5"/>`;
       html += `<path class="link" d="${d}" stroke="${b.color}" stroke-width="2"/>`;
     });
 
