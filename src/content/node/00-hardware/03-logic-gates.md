@@ -14,6 +14,9 @@ children:
   - sr-latch
   - d-flipflop
   - register
+  - counter
+  - ram
+  - alu
 related: []
 prerequisites:
   - boolean-algebra
@@ -32,28 +35,32 @@ createdAt: 2026-06-11
 
 只有两个输入都是 1 时，输出才是 1。
 
-```
-输入 A ──╮
-         ╰─[&]── 输出
-输入 B ──╯
+```mermaid
+graph LR
+    A[输入 A] --> AND[与门 AND]
+    B[输入 B] --> AND
+    AND --> O[输出]
 ```
 
 ### 或门（OR Gate）
 
 两个输入中至少有一个是 1 时，输出为 1。
 
-```
-输入 A ──╮
-         ╰─[≥1]── 输出
-输入 B ──╯
+```mermaid
+graph LR
+    A[输入 A] --> OR[或门 OR]
+    B[输入 B] --> OR
+    OR --> O[输出]
 ```
 
 ### 非门（NOT Gate / 反相器）
 
 输出和输入相反。
 
-```
-输入 ──[1]── 输出
+```mermaid
+graph LR
+    I[输入] --> NOT[非门 NOT]
+    NOT --> O[输出]
 ```
 
 ## 组合逻辑门

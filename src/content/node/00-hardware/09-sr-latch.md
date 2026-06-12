@@ -1,21 +1,23 @@
 ---
 id: sr-latch
-title: SR锁存器
-summary: SR锁存器是最基础的存储电路，用两个与非门交叉连接实现1位数据存储
+title: SR 锁存器
+summary: SR 锁存器（SR Latch）是用两个与非门交叉连接实现的最简单的存储单元
 difficulty: intermediate
 order: 6
 parent: logic-gates
-children: []
+children:
+  - d-flipflop
+  - register
 related: []
 prerequisites:
-  - not-gate
+  - logic-gates
 tags:
   - hardware
-  - memory
+  - logic-gates
 createdAt: 2026-06-11
 ---
 
-## 什么是锁存器？
+## 从组合逻辑到时序逻辑
 
 前面的 [[logic-gates|逻辑门]] 和 [[half-adder|加法器]] 都属于**组合逻辑电路**——输出只取决于当前输入，**没有记忆能力**。
 
@@ -25,15 +27,14 @@ createdAt: 2026-06-11
 
 SR 锁存器由两个**与非门**交叉连接而成：
 
-```
-S ──╮
-    ╰─[NAND]─┬── Q
-             │
-         ╭───┘
-         │
-    ╭───┴──
-    │
-R ──╰─[NAND]─┬── Q̅
+```mermaid
+graph LR
+    S[S] --> NAND_A[NAND A]
+    R[R] --> NAND_B[NAND B]
+    NAND_A --> Q[Q]
+    NAND_B --> Q̅[Q̅]
+    NAND_A -.->|反馈| NAND_B
+    NAND_B -.->|反馈| NAND_A
 ```
 
 - **S**（Set，置位）：使 Q = 1
@@ -57,15 +58,14 @@ R ──╰─[NAND]─┬── Q̅
 3. **S=1, R=1**：锁存器保持当前状态不变（**存储**）
 4. **S=0, R=0**：Q 和 Q̅ 同时为 1，破坏逻辑关系，不允许
 
-## 从记忆到存储
+## 从锁存器到寄存器
 
-SR 锁存器虽然简单，但它是所有计算机存储器的原点：
+一个 SR 锁存器只能存储 1 位。将多个锁存器组合，可以构成：
 
-- 多个锁存器 → [[register|寄存器]]
-- 寄存器阵列 → RAM
-- 加上时钟控制 → [[d-flipflop|D触发器]]
-- 更复杂的时序控制 → CPU 中的状态机
+- [[d-flipflop|D 触发器]]：增加时钟控制，解决输入约束问题
+- [[register|寄存器]]：多个触发器并排，实现多位数存储
+- **内存**：更大规模的存储阵列
 
 ## 小结
 
-SR 锁存器用两个门实现了"记忆"能力，是组合逻辑到时序逻辑的跨越。
+SR 锁存器是最简单的存储单元，它的双稳态特性是所有时序逻辑电路的基础。

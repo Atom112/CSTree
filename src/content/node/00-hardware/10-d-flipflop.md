@@ -31,15 +31,23 @@ D 触发器在 SR 锁存器基础上增加：
 - **一个非门**：确保 S 和 R 不会同时为 0
 - **时钟信号（CLK）**：控制何时采样输入
 
-```
-D ──┬──╮
-    │  ╰─[NAND]─┐
-    │           │
-CLK ──┬─────────┴── [SR Latch]
-      │           │
-      ╰─[NAND]─┐
-               │
-      ╰─[NOT]──┘
+```mermaid
+graph LR
+    D[D] --> N1[NAND A]
+    CLK[CLK] --> N1
+    CLK --> NOT[非门 NOT]
+    NOT --> N2[NAND B]
+    CLK --> N2
+
+    subgraph SR[SR 锁存器]
+        NAND_C[NAND C] --> Q[Q]
+        NAND_D[NAND D] --> Q̅[Q̅]
+        NAND_C -.-> NAND_D
+        NAND_D -.-> NAND_C
+    end
+
+    N1 --> NAND_C
+    N2 --> NAND_D
 ```
 
 ## 功能表

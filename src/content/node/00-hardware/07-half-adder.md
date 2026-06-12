@@ -34,13 +34,16 @@ createdAt: 2026-06-11
 
 半加器用两个逻辑门实现：
 
-```
-A ──╮
-    ╰─[XOR]── S (和)
-B ──╯
-A ──╮
-    ╰─[AND]── C (进位)
-B ──╯
+```mermaid
+graph LR
+    subgraph HA[半加器]
+        A[A] --> XOR[XOR 异或门]
+        B[B] --> XOR
+        A --> AND[AND 与门]
+        B --> AND
+    end
+    XOR --> S[和 S]
+    AND --> C[进位 C]
 ```
 
 - **和（S）**：A XOR B（异或门）

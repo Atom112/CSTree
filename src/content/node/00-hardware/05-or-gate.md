@@ -28,10 +28,11 @@ createdAt: 2026-06-11
 
 ## 电路符号
 
-```
- A ──╮
-     ╰─[≥1]── 输出
- B ──╯
+```mermaid
+graph LR
+    A[A] --> OR[或门 OR]
+    B[B] --> OR
+    OR --> Output[输出]
 ```
 
 ## 实际应用
@@ -44,8 +45,15 @@ createdAt: 2026-06-11
 
 实际电路中常将多个与门和或门组合使用。例如：
 
-```
-(A AND B) OR (C AND D)
+```mermaid
+graph LR
+    A[A] --> AND1[与门 1]
+    B[B] --> AND1
+    C[C] --> AND2[与门 2]
+    D[D] --> AND2
+    AND1 --> OR[或门 OR]
+    AND2 --> OR
+    OR --> Output[输出]
 ```
 
 这种组合可以实现复杂的逻辑判断。

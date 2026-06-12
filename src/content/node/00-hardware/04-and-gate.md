@@ -29,10 +29,11 @@ createdAt: 2026-06-11
 
 ## 电路符号
 
-```
- A ──╮
-     ╰─[&]── 输出
- B ──╯
+```mermaid
+graph LR
+    A[A] --> AND[与门 AND]
+    B[B] --> AND
+    AND --> Output[输出]
 ```
 
 在电路图中，与门常用 & 符号或圆点 · 表示。

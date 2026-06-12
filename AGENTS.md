@@ -73,6 +73,8 @@ updatedAt: 2026-06-11      # 更新日期
 - 代码块标注语言：` ```python` / ` ```c` / ` ```assembly`
 - 图片放入 `public/images/`，使用 `![描述](/images/xxx.png)` 引用
 - 尽量用表格、列表、代码示例等结构化方式呈现知识
+- 公式使用latex语法撰写
+- 使用mermaid绘制导图相关内容
 
 ### 3.3 难度分级
 

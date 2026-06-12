@@ -171,5 +171,88 @@ const canonicalUrl = nodeId
         });
       }
     </script>
+
+    <!-- Mermaid diagram renderer -->
+    <script>
+      (function () {
+        // Astro's Shiki highlighter renders ```mermaid as <pre data-language="mermaid">
+        var SEL = 'pre[data-language="mermaid"]';
+        var RENDERED = 'mermaid-rendered';
+        var DATA_SRC = 'data-mermaid-source';
+
+        function getTheme() {
+          return document.documentElement.classList.contains('dark') ? 'dark' : 'default';
+        }
+
+        async function renderAll() {
+          var blocks = document.querySelectorAll(SEL);
+          if (blocks.length === 0) return;
+
+          var mod = await import('mermaid');
+          var mermaid = mod.default;
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: getTheme(),
+            securityLevel: 'loose',
+            fontFamily: '"Noto Sans SC","Source Han Sans SC",system-ui,sans-serif',
+            flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+          });
+
+          var i = 0;
+          for (var pre of blocks) {
+            var src = (pre.textContent || '').trim();
+            if (!src) continue;
+            var id = 'mermaid-' + i;
+            pre.setAttribute(DATA_SRC, src);
+            try {
+              var result = await mermaid.render(id, src);
+              pre.innerHTML = result.svg;
+              pre.classList.add(RENDERED);
+              pre.removeAttribute('style'); // clear Shiki inline style
+            } catch (e) {
+              console.warn('[Mermaid] render error:', e);
+              pre.innerHTML = '<div class="mermaid-error">图表渲染失败</div>';
+            }
+            i++;
+          }
+        }
+
+        function start() { renderAll().catch(console.warn); }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', start);
+        } else {
+          start();
+        }
+
+        // Re-render on dark mode toggle (debounced)
+        var timer = null;
+        var obs = new MutationObserver(function () {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(function () {
+            document.querySelectorAll('.' + RENDERED).forEach(function (pre) {
+              var src = pre.getAttribute(DATA_SRC);
+              if (!src) return;
+              var id = pre.id || 'mermaid-r';
+              import('mermaid').then(function (mod) {
+                var mermaid = mod.default;
+                mermaid.initialize({
+                  startOnLoad: false,
+                  theme: getTheme(),
+                  securityLevel: 'loose',
+                  fontFamily: '"Noto Sans SC","Source Han Sans SC",system-ui,sans-serif',
+                  flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+                });
+                mermaid.render(id, src).then(function (result) {
+                  pre.innerHTML = result.svg;
+                  pre.removeAttribute('style');
+                }).catch(console.warn);
+              }).catch(console.warn);
+            });
+          }, 300);
+        });
+        obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      })();
+    </script>
   </body>
 </html>
