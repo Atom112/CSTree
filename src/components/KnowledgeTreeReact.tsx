@@ -478,6 +478,8 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
 
     const handleMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return;
+      // Prevent browser from starting text selection / drag-search on SVG
+      e.preventDefault();
       dragRef.current = { sx: e.clientX, sy: e.clientY, vx: viewRef.current.x, vy: viewRef.current.y, moved: false };
       svg.style.cursor = 'grabbing';
     };
@@ -551,7 +553,7 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
     <div ref={containerRef} className="w-full h-full min-h-[400px] relative overflow-hidden">
       {ready ? (
         <>
-          <svg ref={svgRef} className="w-full h-full block" style={{ cursor: 'default', background: 'transparent' }} />
+          <svg ref={svgRef} className="w-full h-full block select-none" style={{ cursor: 'default', background: 'transparent', userSelect: 'none', WebkitUserSelect: 'none', WebkitUserDrag: 'none' }} draggable={false} />
 
           {/* ── Fixed legend (top-right, outside zoom/pan) ── */}
           <div className="absolute top-3 right-3 flex flex-col gap-1.5 px-3 py-2 rounded-lg text-xs select-none pointer-events-none z-10
