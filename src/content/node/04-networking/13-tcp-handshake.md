@@ -4,7 +4,7 @@ title: TCP 三次握手与可靠传输
 summary: TCP（Transmission Control Protocol）是互联网最核心的传输协议——通过三次握手建立连接、序列号保证顺序、确认和重传保证可靠，让不可靠的 IP 网络变成可靠的通信通道
 difficulty: advanced
 order: 13
-parent: nat-dhcp
+parent: ip-protocol
 children:
   - tcp-flow-control
 related:
