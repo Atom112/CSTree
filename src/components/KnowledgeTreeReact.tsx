@@ -21,9 +21,9 @@ const PADDING = 12;
 const NODE_H = 22;
 const NODE_W = 80;
 const BUNDLE_W = 14;
-const LEVEL_Y_PAD = 16;
+const LEVEL_Y_PAD = 48;
 const METRO_D = 4;
-const MIN_FAMILY_H = 22;
+const MIN_FAMILY_H = 48;
 const C = 16;
 const BIG_C = NODE_W + C;
 
@@ -260,6 +260,8 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
   const layoutRef = useRef<any>(null);
   const viewRef = useRef({ x: 0, y: 0, scale: 1 });
   const dragRef = useRef<{ sx: number; sy: number; vx: number; vy: number; moved: boolean } | null>(null);
+  const hoveredIdRef = useRef<string | null>(null);
+  const nodeIndexRef = useRef<Record<string, TNode>>({});
   const [ready, setReady] = useState(false);
 
   useEffect(() => { setReady(true); }, []);
@@ -282,36 +284,43 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
     const { levels, nodeIndex } = buildLevels(nodes);
     const tl = tangledLayout(levels, nodeIndex, isDark);
     layoutRef.current = tl;
+    nodeIndexRef.current = tl.nodeIndex;
 
     // Build SVG content
     const pal = isDark ? DIFF_COLORS_DARK : DIFF_COLORS;
     let html = `<style>
       .tree-content { vector-effect: non-scaling-stroke; }
-      .link { fill: none; }
+      .link { fill: none; transition: opacity 0.2s; }
       .link-bg { stroke: #ffffff; }
       .dark .link-bg { stroke: #111827; }
-      .node-group { cursor: pointer; }
+      .node-group { cursor: pointer; transition: opacity 0.2s; }
       .virtual-root { cursor: default; }
       .node-hit { fill: transparent; }
-      .node-group:hover .node-line { stroke: #60a5fa !important; }
-      .node-group:hover .node-text { fill: #60a5fa !important; }
-      .node-line { stroke-linecap: round; vector-effect: non-scaling-stroke; }
+      .node-line { stroke-linecap: round; vector-effect: non-scaling-stroke; transition: stroke-width 0.2s; }
       .node-text { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; user-select: none; }
       .badge-text { font-family: system-ui, sans-serif; font-size: 9px; font-weight: 700; user-select: none; }
       .dark .node-text { fill: #cbd5e1 !important; }
-      .dark .node-group:hover .node-text { fill: #60a5fa !important; }
       .dark .badge-text { fill: #94a3b8 !important; }
+      /* 🌟 Hover path highlighting */
+      .node-group.dimmed { opacity: 0.15 !important; }
+      .node-group.dimmed .node-line { stroke-width: 1.5 !important; }
+      .link.dimmed { opacity: 0.06 !important; }
+      .node-group.highlighted .node-line { stroke-width: 4.5 !important; filter: brightness(1.2); }
+      .node-group.highlighted > text.node-text { font-size: 13px; }
+      .link.highlighted { opacity: 1 !important; }
+      .link.highlighted + .link.highlighted { stroke-width: 3 !important; }
     </style>
     <g class="tree-content">`;
 
     // Bundles (edges)
     tl.bundles.forEach((b: any) => {
-      let d = '';
       b.links.forEach((l: any) => {
-        d += `M${l.xt} ${l.yt}L${l.xb - l.c1} ${l.yt}A${l.c1} ${l.c1} 90 0 1 ${l.xb} ${l.yt + l.c1}L${l.xb} ${l.ys - l.c2}A${l.c2} ${l.c2} 90 0 0 ${l.xb + l.c2} ${l.ys}L${l.xs} ${l.ys}`;
+        let d = `M${l.xt} ${l.yt}L${l.xb - l.c1} ${l.yt}A${l.c1} ${l.c1} 90 0 1 ${l.xb} ${l.yt + l.c1}L${l.xb} ${l.ys - l.c2}A${l.c2} ${l.c2} 90 0 0 ${l.xb + l.c2} ${l.ys}L${l.xs} ${l.ys}`;
+        const sid = l.source?.id || '';
+        const tid = l.target?.id || '';
+        html += `<path class="link link-bg" d="${d}" stroke-width="5" data-sid="${sid}" data-tid="${tid}"/>`;
+        html += `<path class="link" d="${d}" stroke="${b.color}" stroke-width="2" data-sid="${sid}" data-tid="${tid}"/>`;
       });
-      html += `<path class="link link-bg" d="${d}" stroke-width="5"/>`;
-      html += `<path class="link" d="${d}" stroke="${b.color}" stroke-width="2"/>`;
     });
 
     // Nodes
@@ -391,6 +400,61 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
     renderTree();
   }, [ready, renderTree]);
 
+  // ---- Hover path highlighting helpers ----
+  const getAncestorSet = useCallback((id: string): Set<string> => {
+    const ancestors = new Set<string>();
+    let cur: string | undefined = id;
+    while (cur) {
+      ancestors.add(cur);
+      const nd: any = nodeIndexRef.current[cur];
+      if (!nd || !nd.parents || nd.parents.length === 0) break;
+      cur = nd.parents[0]?.id;
+    }
+    return ancestors;
+  }, []);
+
+  const highlightPath = useCallback((id: string) => {
+    const ancestors = getAncestorSet(id);
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    svg.querySelectorAll<SVGGElement>('.node-group[data-id]').forEach((el) => {
+      const nid = el.getAttribute('data-id');
+      if (!nid || nid === '__cstree_root__') return;
+      if (ancestors.has(nid)) {
+        el.classList.remove('dimmed');
+        el.classList.add('highlighted');
+      } else {
+        el.classList.add('dimmed');
+        el.classList.remove('highlighted');
+      }
+    });
+
+    svg.querySelectorAll<SVGPathElement>('.link[data-sid]').forEach((el) => {
+      const sid = el.getAttribute('data-sid');
+      const tid = el.getAttribute('data-tid');
+      if ((sid && ancestors.has(sid)) || (tid && ancestors.has(tid))) {
+        el.classList.remove('dimmed');
+        el.classList.add('highlighted');
+      } else {
+        el.classList.add('dimmed');
+        el.classList.remove('highlighted');
+      }
+    });
+  }, [getAncestorSet]);
+
+  const clearHighlights = useCallback(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    svg.querySelectorAll<SVGGElement>('.node-group.dimmed, .node-group.highlighted').forEach((el) => {
+      el.classList.remove('dimmed', 'highlighted');
+    });
+    svg.querySelectorAll<SVGPathElement>('.link.dimmed, .link.highlighted').forEach((el) => {
+      el.classList.remove('dimmed', 'highlighted');
+    });
+    hoveredIdRef.current = null;
+  }, []);
+
   // ---- Zoom / Pan event handlers ----
   useEffect(() => {
     const svg = svgRef.current;
@@ -450,6 +514,20 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
     const handleMouseLeave = () => {
       dragRef.current = null;
       svg.style.cursor = 'default';
+      clearHighlights();
+    };
+
+    const handleMouseOver = (e: MouseEvent) => {
+      // Ignore during drag
+      if (dragRef.current?.moved) return;
+      const target = e.target as Element;
+      const group = target.closest('[data-id]') as HTMLElement | null;
+      if (!group) return;
+      const id = group.getAttribute('data-id');
+      if (!id || id === '__cstree_root__') return;
+      if (id === hoveredIdRef.current) return;
+      hoveredIdRef.current = id;
+      highlightPath(id);
     };
 
     svg.addEventListener('wheel', handleWheel, { passive: false });
@@ -457,6 +535,7 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     svg.addEventListener('mouseleave', handleMouseLeave);
+    svg.addEventListener('mouseover', handleMouseOver);
 
     return () => {
       svg.removeEventListener('wheel', handleWheel);
@@ -464,8 +543,9 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       svg.removeEventListener('mouseleave', handleMouseLeave);
+      svg.removeEventListener('mouseover', handleMouseOver);
     };
-  }, [ready, applyView]);
+  }, [ready, applyView, highlightPath, clearHighlights]);
 
   return (
     <div ref={containerRef} className="w-full h-full min-h-[400px] relative overflow-hidden">
