@@ -5,7 +5,8 @@ summary: 算术指令（加减乘除）和逻辑指令（与或非异或）是�
 difficulty: intermediate
 order: 5
 parent: data-transfer-instructions
-children: []
+children:
+  - simd-instructions
 related:
   - alu
   - flags-condition-codes

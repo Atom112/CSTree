@@ -123,16 +123,16 @@ function buildLevels(nodes: NodeData[]) {
 // ============================================================
 //  tangledLayout — full Tangled Tree layout algorithm
 // ============================================================
-function tangledLayout(levels: TNode[][], nodeIndex: Record<string, TNode>, isDark: boolean) {
+function tangledLayout(levels: any[], nodeIndex: Record<string, TNode>, isDark: boolean) {
   // 1. Objectify parents
-  levels.forEach((l) => l.forEach((n) => {
+  levels.forEach((l) => l.forEach((n: TNode) => {
     n.parents = n.parents.map((pid: string) => nodeIndex[pid]).filter(Boolean);
   }));
 
   // 2. Bundles per level
   levels.forEach((l, i) => {
     const idx: Record<string, any> = {};
-    l.forEach((n) => {
+    l.forEach((n: TNode) => {
       if (n.parents.length === 0) return;
       const key = n.parents.map((p: TNode) => p.id).sort().join('-X-');
       if (key in idx) {
@@ -147,12 +147,12 @@ function tangledLayout(levels: TNode[][], nodeIndex: Record<string, TNode>, isDa
       n.bundle = idx[key];
     });
     l.bundles = Object.keys(idx).map((k) => idx[k]);
-    l.bundles.forEach((b, i) => (b.i = i));
+    l.bundles.forEach((b: any, i: number) => (b.i = i));
   });
 
   // 3. Links
   const links: any[] = [];
-  levels.forEach((l) => l.forEach((n) => n.parents.forEach((p: TNode) => links.push({ source: n, bundle: n.bundle, target: p }))));
+  levels.forEach((l) => l.forEach((n: TNode) => n.parents.forEach((p: TNode) => links.push({ source: n, bundle: n.bundle, target: p }))));
 
   // 4. All bundles
   const allBundles: any[] = [];
@@ -241,7 +241,7 @@ function tangledLayout(levels: TNode[][], nodeIndex: Record<string, TNode>, isDa
     height: Math.max(...allY, 0) + NODE_H / 2 + 2 * PADDING,
   };
 
-  // 15. Bundle colors (from parent difficulty)
+  // 16. Bundle colors (from parent difficulty)
   const palette = isDark ? DIFF_COLORS_DARK : DIFF_COLORS;
   allBundles.forEach((b: any) => {
     const parentDiff = b.parents.length > 0 ? b.parents[0].difficulty || 'beginner' : 'beginner';

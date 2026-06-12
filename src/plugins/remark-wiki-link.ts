@@ -31,7 +31,7 @@ interface WikiMatch {
 
 export function remarkWikiLink() {
   return (tree: Root): void => {
-    visit(tree, 'text', (node: Text, index: number | undefined, parent: Root | undefined) => {
+    visit(tree, 'text', ((node: Text, index: number | undefined, parent: Root | undefined) => {
       if (!parent || index === undefined) return;
 
       const text = node.value;
@@ -93,6 +93,6 @@ export function remarkWikiLink() {
 
       // Tell visit to skip past the inserted nodes to avoid re-processing them
       return index + nodes.length;
-    });
+    }) as any);
   };
 }

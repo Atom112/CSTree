@@ -40,5 +40,5 @@ export function fromCollection(
   return entries.map((entry) => ({
     ...entry.data,
     id: entry.data.id,
-  }));
+  })) as NodeData[];
 }

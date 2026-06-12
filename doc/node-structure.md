@@ -124,41 +124,104 @@ machine-code (机器码与指令编码) [intermediate]
               └── data-transfer-instructions (数据传送指令) [intermediate]
                     id: data-transfer-instructions | order: 4 | parent: addressing-modes
                     prerequisites: addressing-modes
-                    └── arithmetic-logic-instructions (算术与逻辑指令) [intermediate]
+                    ├── arithmetic-logic-instructions (算术与逻辑指令) [intermediate]
                           id: arithmetic-logic-instructions | order: 5 | parent: data-transfer-instructions
                           prerequisites: data-transfer-instructions
-                          └── flags-condition-codes (标志位与条件码) [intermediate]
-                                id: flags-condition-codes | order: 6 | parent: arithmetic-logic-instructions
+                          ├── flags-condition-codes (标志位与条件码) [intermediate]
+                          │     id: flags-condition-codes | order: 6 | parent: arithmetic-logic-instructions
+                          │     prerequisites: arithmetic-logic-instructions
+                          │     └── branch-jump-instructions (分支与跳转指令) [intermediate]
+                          │           id: branch-jump-instructions | order: 7 | parent: flags-condition-codes
+                          │           prerequisites: flags-condition-codes
+                          │           └── stack-frames (栈帧与函数调用约定) [advanced]
+                          │                 id: stack-frames | order: 8 | parent: branch-jump-instructions
+                          │                 prerequisites: branch-jump-instructions
+                          │                 └── parameter-passing (参数传递) [advanced]
+                          │                       id: parameter-passing | order: 9 | parent: stack-frames
+                          │                       prerequisites: stack-frames
+                          │                       └── recursion-assembly (递归的汇编实现) [advanced]
+                          │                             id: recursion-assembly | order: 10 | parent: parameter-passing
+                          │                             prerequisites: parameter-passing
+                          │                             └── inline-assembly (内联汇编与C混合编程) [advanced]
+                          │                                   id: inline-assembly | order: 11 | parent: recursion-assembly
+                          │                                   prerequisites: recursion-assembly
+                          │                                   └── disassembly-debugging (反汇编与调试) [advanced]
+                          │                                         id: disassembly-debugging | order: 12 | parent: inline-assembly
+                          │                                         prerequisites: inline-assembly
+                          │                                         └── buffer-overflow (缓冲区溢出与安全) [advanced]
+                          │                                               id: buffer-overflow | order: 13 | parent: disassembly-debugging
+                          │                                               prerequisites: disassembly-debugging, stack-frames
+                          └── simd-instructions (SIMD / 向量指令) [advanced]
+                                id: simd-instructions | order: 14 | parent: arithmetic-logic-instructions
                                 prerequisites: arithmetic-logic-instructions
-                                └── branch-jump-instructions (分支与跳转指令) [intermediate]
-                                      id: branch-jump-instructions | order: 7 | parent: flags-condition-codes
-                                      prerequisites: flags-condition-codes
-                                      └── stack-frames (栈帧与函数调用约定) [advanced]
-                                            id: stack-frames | order: 8 | parent: branch-jump-instructions
-                                            prerequisites: branch-jump-instructions
-                                            └── parameter-passing (参数传递) [advanced]
-                                                  id: parameter-passing | order: 9 | parent: stack-frames
-                                                  prerequisites: stack-frames
-                                                  └── recursion-assembly (递归的汇编实现) [advanced]
-                                                        id: recursion-assembly | order: 10 | parent: parameter-passing
-                                                        prerequisites: parameter-passing
-                                                        └── inline-assembly (内联汇编与C混合编程) [advanced]
-                                                              id: inline-assembly | order: 11 | parent: recursion-assembly
-                                                              prerequisites: recursion-assembly
-                                                              └── disassembly-debugging (反汇编与调试) [advanced]
-                                                                    id: disassembly-debugging | order: 12 | parent: inline-assembly
-                                                                    prerequisites: inline-assembly
-                                                                    └── buffer-overflow (缓冲区溢出与安全) [advanced]
-                                                                          id: buffer-overflow | order: 13 | parent: disassembly-debugging
-                                                                          prerequisites: disassembly-debugging, stack-frames
-                                                                          └── simd-instructions (SIMD / 向量指令) [advanced]
-                                                                                id: simd-instructions | order: 14 | parent: buffer-overflow
-                                                                                prerequisites: arithmetic-logic-instructions
 ```
 
 ### 02-os — 操作系统方向
 
-> ⬜ 暂无节点，等待添加
+```
+os-history (操作系统的作用与历史) [beginner]
+  id: os-history | order: 1 | parent: 无
+  prerequisites: 无
+  └── system-calls (系统调用与内核态/用户态) [intermediate]
+        id: system-calls | order: 2 | parent: os-history
+        prerequisites: os-history
+        ├── process-concept (进程的概念与状态转换) [intermediate]
+        │     id: process-concept | order: 3 | parent: system-calls
+        │     prerequisites: system-calls
+        │     ├── process-scheduling (进程调度算法) [intermediate]
+        │     │     id: process-scheduling | order: 4 | parent: process-concept
+        │     │     prerequisites: process-concept
+        │     ├── threads (线程与多线程) [intermediate]
+        │     │     id: threads | order: 5 | parent: process-concept
+        │     │     prerequisites: process-concept
+        │     │     └── race-condition (竞争条件与临界区) [intermediate]
+        │     │           id: race-condition | order: 7 | parent: threads
+        │     │           prerequisites: threads
+        │     │           └── mutex-semaphore (互斥锁与信号量) [advanced]
+        │     │                 id: mutex-semaphore | order: 8 | parent: race-condition
+        │     │                 prerequisites: race-condition
+        │     │                 ├── classic-sync-problems (经典同步问题) [advanced]
+        │     │                 │     id: classic-sync-problems | order: 9 | parent: mutex-semaphore
+        │     │                 │     prerequisites: mutex-semaphore
+        │     │                 └── deadlock (死锁) [advanced]
+        │     │                       id: deadlock | order: 10 | parent: mutex-semaphore
+        │     │                       prerequisites: mutex-semaphore
+        │     └── context-switch (上下文切换) [intermediate]
+        │           id: context-switch | order: 6 | parent: process-concept
+        │           prerequisites: process-concept
+        ├── memory-address-space (内存地址空间) [intermediate]
+        │     id: memory-address-space | order: 11 | parent: system-calls
+        │     prerequisites: system-calls
+        │     └── paging (分页与页表) [advanced]
+        │           id: paging | order: 12 | parent: memory-address-space
+        │           prerequisites: memory-address-space
+        │           ├── virtual-memory (虚拟内存与页面置换) [advanced]
+        │           │     id: virtual-memory | order: 13 | parent: paging
+        │           │     prerequisites: paging
+        │           └── tlb (TLB 与内存映射) [advanced]
+        │                 id: tlb | order: 14 | parent: paging
+        │                 prerequisites: paging
+        └── file-system-interface (文件系统接口与实现) [intermediate]
+              id: file-system-interface | order: 15 | parent: system-calls
+              prerequisites: system-calls
+              └── directory-structure (目录结构与文件分配) [intermediate]
+                    id: directory-structure | order: 16 | parent: file-system-interface
+                    prerequisites: file-system-interface
+                    └── disk-scheduling (磁盘调度) [advanced]
+                          id: disk-scheduling | order: 17 | parent: directory-structure
+                          prerequisites: directory-structure
+
+interrupts-exceptions (中断与异常，来自硬件)
+  └── io-drivers (I/O 硬件与驱动模型) [intermediate]
+        id: io-drivers | order: 18 | parent: interrupts-exceptions
+        prerequisites: interrupts-exceptions
+        └── interrupt-handling (中断处理) [advanced]
+              id: interrupt-handling | order: 19 | parent: io-drivers
+              prerequisites: io-drivers
+              └── dma (DMA 直接存储器访问) [advanced]
+                    id: dma | order: 20 | parent: interrupt-handling
+                    prerequisites: interrupt-handling
+```
 
 ### 03-compilers — 编译器方向
 
@@ -210,7 +273,7 @@ machine-code (机器码与指令编码) [intermediate]
 | 30 | `isa-overview` | 指令集架构概述 | intermediate | machine-code | 0 | machine-code |
 | 31 | `addressing-modes` | 寻址方式 | intermediate | isa-overview | 0 | isa-overview |
 | 32 | `data-transfer-instructions` | 数据传送指令 | intermediate | addressing-modes | 0 | addressing-modes |
-| 33 | `arithmetic-logic-instructions` | 算术与逻辑指令 | intermediate | data-transfer-instructions | 0 | data-transfer-instructions |
+| 33 | `arithmetic-logic-instructions` | 算术与逻辑指令 | intermediate | data-transfer-instructions | 1 | data-transfer-instructions |
 | 34 | `flags-condition-codes` | 标志位与条件码 | intermediate | arithmetic-logic-instructions | 0 | arithmetic-logic-instructions |
 | 35 | `branch-jump-instructions` | 分支与跳转指令 | intermediate | flags-condition-codes | 1 | flags-condition-codes |
 | 36 | `stack-frames` | 栈帧与函数调用约定 | advanced | branch-jump-instructions | 1 | branch-jump-instructions |
@@ -218,8 +281,28 @@ machine-code (机器码与指令编码) [intermediate]
 | 38 | `recursion-assembly` | 递归的汇编实现 | advanced | parameter-passing | 1 | parameter-passing |
 | 39 | `inline-assembly` | 内联汇编与C混合编程 | advanced | recursion-assembly | 1 | recursion-assembly |
 | 40 | `disassembly-debugging` | 反汇编与调试 | advanced | inline-assembly | 1 | inline-assembly |
-| 41 | `buffer-overflow` | 缓冲区溢出与安全 | advanced | disassembly-debugging | 1 | disassembly-debugging, stack-frames |
-| 42 | `simd-instructions` | SIMD/向量指令 | advanced | buffer-overflow | 0 | arithmetic-logic-instructions |
+| 41 | `buffer-overflow` | 缓冲区溢出与安全 | advanced | disassembly-debugging | 0 | disassembly-debugging, stack-frames |
+| 42 | `simd-instructions` | SIMD/向量指令 | advanced | arithmetic-logic-instructions | 0 | arithmetic-logic-instructions |
+| 43 | `os-history` | 操作系统的作用与历史 | beginner | — | 1 | — |
+| 44 | `system-calls` | 系统调用与内核态/用户态 | intermediate | os-history | 3 | os-history |
+| 45 | `process-concept` | 进程的概念与状态转换 | intermediate | system-calls | 3 | system-calls |
+| 46 | `process-scheduling` | 进程调度算法 | intermediate | process-concept | 0 | process-concept |
+| 47 | `threads` | 线程与多线程 | intermediate | process-concept | 1 | process-concept |
+| 48 | `context-switch` | 上下文切换 | intermediate | process-concept | 0 | process-concept |
+| 49 | `race-condition` | 竞争条件与临界区 | intermediate | threads | 1 | threads |
+| 50 | `mutex-semaphore` | 互斥锁与信号量 | advanced | race-condition | 2 | race-condition |
+| 51 | `classic-sync-problems` | 经典同步问题 | advanced | mutex-semaphore | 0 | mutex-semaphore |
+| 52 | `deadlock` | 死锁 | advanced | mutex-semaphore | 0 | mutex-semaphore |
+| 53 | `memory-address-space` | 内存地址空间（逻辑 vs 物理） | intermediate | system-calls | 1 | system-calls |
+| 54 | `paging` | 分页与页表 | advanced | memory-address-space | 2 | memory-address-space |
+| 55 | `virtual-memory` | 虚拟内存与页面置换 | advanced | paging | 0 | paging |
+| 56 | `tlb` | TLB 与内存映射 | advanced | paging | 0 | paging |
+| 57 | `file-system-interface` | 文件系统接口与实现 | intermediate | system-calls | 1 | system-calls |
+| 58 | `directory-structure` | 目录结构与文件分配 | intermediate | file-system-interface | 1 | file-system-interface |
+| 59 | `disk-scheduling` | 磁盘调度 | advanced | directory-structure | 0 | directory-structure |
+| 60 | `io-drivers` | I/O 硬件与驱动模型 | intermediate | interrupts-exceptions | 1 | interrupts-exceptions |
+| 61 | `interrupt-handling` | 中断处理 | advanced | io-drivers | 1 | io-drivers |
+| 62 | `dma` | DMA（直接存储器访问） | advanced | interrupt-handling | 0 | interrupt-handling |
 
 ---
 

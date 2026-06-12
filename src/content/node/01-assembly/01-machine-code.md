@@ -12,6 +12,7 @@ related:
 prerequisites:
   - binary-numbers
   - logic-gates
+  - cpu-datapath
 tags:
   - assembly
 createdAt: 2026-06-12

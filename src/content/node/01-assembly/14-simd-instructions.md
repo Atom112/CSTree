@@ -4,7 +4,7 @@ title: SIMD / 向量指令
 summary: SIMD（Single Instruction, Multiple Data，单指令多数据）让 CPU 用一条指令同时处理多个数据——是多媒体处理、科学计算和 AI 推理加速的基石
 difficulty: advanced
 order: 14
-parent: buffer-overflow
+parent: arithmetic-logic-instructions
 children: []
 related:
   - buffer-overflow

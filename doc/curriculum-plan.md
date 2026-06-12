@@ -64,8 +64,9 @@
 | 4 | 数据传送指令（MOV / Load / Store） | intermediate | ✅ 已完成 |
 | **运算与控制** | | | |
 | 5 | 算术与逻辑指令 | intermediate | ✅ 已完成 |
-| 6 | 分支与跳转指令 | intermediate | ✅ 已完成 |
-| 7 | 标志位与条件码 | intermediate | ✅ 已完成 |
+| 6 | 标志位与条件码 | intermediate | ✅ 已完成 |
+| 7 | 分支与跳转指令 | intermediate | ✅ 已完成 |
+| 14 | SIMD / 向量指令 | advanced | ✅ 已完成 |
 | **子程序与栈** | | | |
 | 8 | 栈帧与函数调用约定 | advanced | ✅ 已完成 |
 | 9 | 参数传递（寄存器 vs 栈） | advanced | ✅ 已完成 |
@@ -74,7 +75,6 @@
 | 11 | 内联汇编与 C 混合编程 | advanced | ✅ 已完成 |
 | 12 | 反汇编与调试 | advanced | ✅ 已完成 |
 | 13 | 缓冲区溢出与安全 | advanced | ✅ 已完成 |
-| 14 | SIMD / 向量指令 | advanced | ✅ 已完成 |
 
 **权威教材：** CS:APP（Bryant & O'Hallaron）第 3 章、 Irvine《Assembly Language for x86 Processors》
 
@@ -82,36 +82,36 @@
 
 ### 02-os — 操作系统
 
-约 18-22 个节点。
+20 个节点（全部完成）。
 
 | 层级 | 知识点 | 难度 | 状态 |
 |------|--------|------|------|
 | **操作系统概述** | | | |
-| 1 | 操作系统的作用与历史 | beginner | ⬜ 待添加 |
-| 2 | 系统调用与内核态/用户态 | intermediate | ⬜ 待添加 |
+| 1 | 操作系统的作用与历史 | beginner | ✅ 已完成 |
+| 2 | 系统调用与内核态/用户态 | intermediate | ✅ 已完成 |
 | **进程与线程** | | | |
-| 3 | 进程的概念与状态转换 | intermediate | ⬜ 待添加 |
-| 4 | 进程调度算法 | intermediate | ⬜ 待添加 |
-| 5 | 线程（Thread）与多线程 | intermediate | ⬜ 待添加 |
-| 6 | 上下文切换 | intermediate | ⬜ 待添加 |
+| 3 | 进程的概念与状态转换 | intermediate | ✅ 已完成 |
+| 4 | 进程调度算法 | intermediate | ✅ 已完成 |
+| 5 | 线程（Thread）与多线程 | intermediate | ✅ 已完成 |
+| 6 | 上下文切换 | intermediate | ✅ 已完成 |
 | **并发与同步** | | | |
-| 7 | 竞争条件与临界区 | intermediate | ⬜ 待添加 |
-| 8 | 互斥锁与信号量 | advanced | ⬜ 待添加 |
-| 9 | 经典同步问题（生产者消费者等） | advanced | ⬜ 待添加 |
-| 10 | 死锁（Deadlock） | advanced | ⬜ 待添加 |
+| 7 | 竞争条件与临界区 | intermediate | ✅ 已完成 |
+| 8 | 互斥锁与信号量 | advanced | ✅ 已完成 |
+| 9 | 经典同步问题（生产者消费者等） | advanced | ✅ 已完成 |
+| 10 | 死锁（Deadlock） | advanced | ✅ 已完成 |
 | **内存管理** | | | |
-| 11 | 内存地址空间（逻辑 vs 物理） | intermediate | ⬜ 待添加 |
-| 12 | 分页与页表 | advanced | ⬜ 待添加 |
-| 13 | 虚拟内存与页面置换 | advanced | ⬜ 待添加 |
-| 14 | TLB 与内存映射 | advanced | ⬜ 待添加 |
+| 11 | 内存地址空间（逻辑 vs 物理） | intermediate | ✅ 已完成 |
+| 12 | 分页与页表 | advanced | ✅ 已完成 |
+| 13 | 虚拟内存与页面置换 | advanced | ✅ 已完成 |
+| 14 | TLB 与内存映射 | advanced | ✅ 已完成 |
 | **文件系统** | | | |
-| 15 | 文件系统接口与实现 | intermediate | ⬜ 待添加 |
-| 16 | 目录结构与文件分配 | intermediate | ⬜ 待添加 |
-| 17 | 磁盘调度 | advanced | ⬜ 待添加 |
+| 15 | 文件系统接口与实现 | intermediate | ✅ 已完成 |
+| 16 | 目录结构与文件分配 | intermediate | ✅ 已完成 |
+| 17 | 磁盘调度 | advanced | ✅ 已完成 |
 | **I/O 与设备** | | | |
-| 18 | I/O 硬件与驱动模型 | intermediate | ⬜ 待添加 |
-| 19 | 中断处理 | advanced | ⬜ 待添加 |
-| 20 | DMA（直接存储器访问） | advanced | ⬜ 待添加 |
+| 18 | I/O 硬件与驱动模型 | intermediate | ✅ 已完成 |
+| 19 | 中断处理 | advanced | ✅ 已完成 |
+| 20 | DMA（直接存储器访问） | advanced | ✅ 已完成 |
 
 **权威教材：** Arpaci-Dusseau《Operating Systems: Three Easy Pieces》、Silberschatz《Operating System Concepts》
 
@@ -119,29 +119,29 @@
 
 ### 03-compilers — 编译原理
 
-约 14-18 个节点。
+15 个节点（全部完成）。
 
 | 层级 | 知识点 | 难度 | 状态 |
 |------|--------|------|------|
 | **前端** | | | |
-| 1 | 编译器概述与整体结构 | intermediate | ⬜ 待添加 |
-| 2 | 词法分析与正则表达式 | intermediate | ⬜ 待添加 |
-| 3 | 有限自动机（DFA / NFA） | intermediate | ⬜ 待添加 |
-| 4 | 语法分析与上下文无关文法 | intermediate | ⬜ 待添加 |
-| 5 | 自顶向下分析（LL） | advanced | ⬜ 待添加 |
-| 6 | 自底向上分析（LR, LALR） | advanced | ⬜ 待添加 |
-| 7 | 抽象语法树（AST） | intermediate | ⬜ 待添加 |
+| 1 | 编译器概述与整体结构 | intermediate | ✅ 已完成 |
+| 2 | 词法分析与正则表达式 | intermediate | ✅ 已完成 |
+| 3 | 有限自动机（DFA / NFA） | intermediate | ✅ 已完成 |
+| 4 | 语法分析与上下文无关文法 | intermediate | ✅ 已完成 |
+| 5 | 自顶向下分析（LL） | advanced | ✅ 已完成 |
+| 6 | 自底向上分析（LR, LALR） | advanced | ✅ 已完成 |
+| 7 | 抽象语法树（AST） | intermediate | ✅ 已完成 |
 | **中间表示** | | | |
-| 8 | 语义分析与符号表 | advanced | ⬜ 待添加 |
-| 9 | 类型检查与类型推导 | advanced | ⬜ 待添加 |
-| 10 | 中间表示（IR, 三地址码） | advanced | ⬜ 待添加 |
+| 8 | 语义分析与符号表 | advanced | ✅ 已完成 |
+| 9 | 类型检查与类型推导 | advanced | ✅ 已完成 |
+| 10 | 中间表示（IR, 三地址码） | advanced | ✅ 已完成 |
 | **后端** | | | |
-| 11 | 代码生成 | advanced | ⬜ 待添加 |
-| 12 | 寄存器分配（图着色） | advanced | ⬜ 待添加 |
-| 13 | 基本优化（常量折叠、死代码消除） | advanced | ⬜ 待添加 |
-| 14 | 循环优化与数据流分析 | advanced | ⬜ 待添加 |
-| 15 | 指令调度 | advanced | ⬜ 待添加 |
-| — | JIT（即时编译） | advanced | ⬜ 待添加 |
+| 11 | 代码生成 | advanced | ✅ 已完成 |
+| 12 | 寄存器分配（图着色） | advanced | ✅ 已完成 |
+| 13 | 基本优化（常量折叠、死代码消除） | advanced | ✅ 已完成 |
+| 14 | 循环优化与数据流分析 | advanced | ✅ 已完成 |
+| 15 | 指令调度 | advanced | ✅ 已完成 |
+| 16 | JIT（即时编译） | advanced | ✅ 已完成 |
 
 **权威教材：** Aho, Lam, Sethi, Ullman《Compilers: Principles, Techniques, and Tools》（龙书）、Appel《Modern Compiler Implementation》
 
@@ -149,33 +149,33 @@
 
 ### 04-networking — 计算机网络
 
-约 16-20 个节点。
+18 个节点（全部完成）。
 
 | 层级 | 知识点 | 难度 | 状态 |
 |------|--------|------|------|
 | **网络基础** | | | |
-| 1 | 网络分层模型（OSI / TCP/IP） | beginner | ⬜ 待添加 |
-| 2 | 物理层基础（信号、编码、复用） | beginner | ⬜ 待添加 |
+| 1 | 网络分层模型（OSI / TCP/IP） | beginner | ✅ 已完成 |
+| 2 | 物理层基础（信号、编码、复用） | beginner | ✅ 已完成 |
 | **数据链路层** | | | |
-| 3 | 帧封装与差错检测（CRC） | intermediate | ⬜ 待添加 |
-| 4 | MAC 协议与以太网（CSMA/CD） | intermediate | ⬜ 待添加 |
-| 5 | 交换机与自学习 | intermediate | ⬜ 待添加 |
-| 6 | ARP 协议 | intermediate | ⬜ 待添加 |
+| 3 | 帧封装与差错检测（CRC） | intermediate | ✅ 已完成 |
+| 4 | MAC 协议与以太网（CSMA/CD） | intermediate | ✅ 已完成 |
+| 5 | 交换机与自学习 | intermediate | ✅ 已完成 |
+| 6 | ARP 协议 | intermediate | ✅ 已完成 |
 | **网络层** | | | |
-| 7 | IP 协议与 IPv4 地址 | intermediate | ⬜ 待添加 |
-| 8 | 子网划分与 CIDR | intermediate | ⬜ 待添加 |
-| 9 | 路由算法（距离向量、链路状态） | advanced | ⬜ 待添加 |
-| 10 | IPv6 与 ICMP | intermediate | ⬜ 待添加 |
-| 11 | NAT 与 DHCP | intermediate | ⬜ 待添加 |
+| 7 | IP 协议与 IPv4 地址 | intermediate | ✅ 已完成 |
+| 8 | 子网划分与 CIDR | intermediate | ✅ 已完成 |
+| 9 | 路由算法（距离向量、链路状态） | advanced | ✅ 已完成 |
+| 10 | IPv6 与 ICMP | intermediate | ✅ 已完成 |
+| 11 | NAT 与 DHCP | intermediate | ✅ 已完成 |
 | **传输层** | | | |
-| 12 | UDP 协议 | intermediate | ⬜ 待添加 |
-| 13 | TCP 三次握手与可靠传输 | advanced | ⬜ 待添加 |
-| 14 | TCP 流量控制与拥塞控制 | advanced | ⬜ 待添加 |
+| 12 | UDP 协议 | intermediate | ✅ 已完成 |
+| 13 | TCP 三次握手与可靠传输 | advanced | ✅ 已完成 |
+| 14 | TCP 流量控制与拥塞控制 | advanced | ✅ 已完成 |
 | **应用层** | | | |
-| 15 | DNS 域名系统 | intermediate | ⬜ 待添加 |
-| 16 | HTTP / HTTPS | intermediate | ⬜ 待添加 |
-| 17 | SMTP / POP / IMAP（邮件） | intermediate | ⬜ 待添加 |
-| 18 | WebSocket 与实时通信 | intermediate | ⬜ 待添加 |
+| 15 | DNS 域名系统 | intermediate | ✅ 已完成 |
+| 16 | HTTP / HTTPS | intermediate | ✅ 已完成 |
+| 17 | SMTP / POP / IMAP（邮件） | intermediate | ✅ 已完成 |
+| 18 | WebSocket 与实时通信 | intermediate | ✅ 已完成 |
 
 **权威教材：** Kurose & Ross《Computer Networking: A Top-Down Approach》、Tanenbaum《Computer Networks》
 
@@ -183,32 +183,32 @@
 
 ### 05-databases — 数据库系统
 
-约 16-20 个节点。
+17 个节点（全部完成）。
 
 | 层级 | 知识点 | 难度 | 状态 |
 |------|--------|------|------|
 | **数据建模** | | | |
-| 1 | 数据库系统概述 | beginner | ⬜ 待添加 |
-| 2 | 实体关系模型（ER） | intermediate | ⬜ 待添加 |
-| 3 | 关系模型与关系代数 | intermediate | ⬜ 待添加 |
+| 1 | 数据库系统概述 | beginner | ✅ 已完成 |
+| 2 | 实体关系模型（ER） | intermediate | ✅ 已完成 |
+| 3 | 关系模型与关系代数 | intermediate | ✅ 已完成 |
 | **SQL 语言** | | | |
-| 4 | SQL 基础（DDL, DML） | intermediate | ⬜ 待添加 |
-| 5 | 连接查询与子查询 | intermediate | ⬜ 待添加 |
-| 6 | 视图、索引与事务 | intermediate | ⬜ 待添加 |
+| 4 | SQL 基础（DDL, DML） | intermediate | ✅ 已完成 |
+| 5 | 连接查询与子查询 | intermediate | ✅ 已完成 |
+| 6 | 视图、索引与事务 | intermediate | ✅ 已完成 |
 | **数据库设计** | | | |
-| 7 | 函数依赖 | advanced | ⬜ 待添加 |
-| 8 | 范式（1NF ~ BCNF） | advanced | ⬜ 待添加 |
-| 9 | 规范化与反规范化 | advanced | ⬜ 待添加 |
+| 7 | 函数依赖 | advanced | ✅ 已完成 |
+| 8 | 范式（1NF ~ BCNF） | advanced | ✅ 已完成 |
+| 9 | 规范化与反规范化 | advanced | ✅ 已完成 |
 | **存储与索引** | | | |
-| 10 | B+ 树索引 | advanced | ⬜ 待添加 |
-| 11 | 哈希索引 | advanced | ⬜ 待添加 |
-| 12 | 查询执行与优化 | advanced | ⬜ 待添加 |
+| 10 | B+ 树索引 | advanced | ✅ 已完成 |
+| 11 | 哈希索引 | advanced | ✅ 已完成 |
+| 12 | 查询执行与优化 | advanced | ✅ 已完成 |
 | **事务与并发** | | | |
-| 13 | ACID 特性 | advanced | ⬜ 待添加 |
-| 14 | 事务隔离级别 | advanced | ⬜ 待添加 |
-| 15 | 锁协议与并发控制 | advanced | ⬜ 待添加 |
-| 16 | 日志与恢复（Undo / Redo） | advanced | ⬜ 待添加 |
-| — | NoSQL 数据库概述 | intermediate | ⬜ 待添加 |
+| 13 | ACID 特性 | advanced | ✅ 已完成 |
+| 14 | 事务隔离级别 | advanced | ✅ 已完成 |
+| 15 | 锁协议与并发控制 | advanced | ✅ 已完成 |
+| 16 | 日志与恢复（Undo / Redo） | advanced | ✅ 已完成 |
+| — | NoSQL 数据库概述 | intermediate | ✅ 已完成 |
 
 **权威教材：** Garcia-Molina, Ullman, Widom《Database Systems: The Complete Book》、Ramakrishnan & Gehrke《Database Management Systems》
 
@@ -216,36 +216,36 @@
 
 ### 06-algorithms — 算法与数据结构
 
-约 20-25 个节点，穿插在其他板块的学习过程中。
+20 个节点（全部完成）。
 
 | 层级 | 知识点 | 难度 | 状态 |
 |------|--------|------|------|
 | **基础数据结构** | | | |
-| 1 | 数组与链表 | beginner | ⬜ 待添加 |
-| 2 | 栈与队列 | beginner | ⬜ 待添加 |
-| 3 | 哈希表（Hash Table） | intermediate | ⬜ 待添加 |
+| 1 | 数组与链表 | beginner | ✅ 已完成 |
+| 2 | 栈与队列 | beginner | ✅ 已完成 |
+| 3 | 哈希表（Hash Table） | intermediate | ✅ 已完成 |
 | **树结构** | | | |
-| 4 | 二叉树与遍历 | intermediate | ⬜ 待添加 |
-| 5 | 二叉搜索树（BST） | intermediate | ⬜ 待添加 |
-| 6 | 堆（Heap）与优先队列 | intermediate | ⬜ 待添加 |
-| 7 | 平衡树（AVL / 红黑树） | advanced | ⬜ 待添加 |
+| 4 | 二叉树与遍历 | intermediate | ✅ 已完成 |
+| 5 | 二叉搜索树（BST） | intermediate | ✅ 已完成 |
+| 6 | 堆（Heap）与优先队列 | intermediate | ✅ 已完成 |
+| 7 | 平衡树（AVL / 红黑树） | advanced | ✅ 已完成 |
 | **图** | | | |
-| 8 | 图的表示（邻接矩阵/表） | intermediate | ⬜ 待添加 |
-| 9 | DFS / BFS | intermediate | ⬜ 待添加 |
-| 10 | 最短路径（Dijkstra, Floyd） | advanced | ⬜ 待添加 |
-| 11 | 最小生成树（Kruskal, Prim） | advanced | ⬜ 待添加 |
+| 8 | 图的表示（邻接矩阵/表） | intermediate | ✅ 已完成 |
+| 9 | DFS / BFS | intermediate | ✅ 已完成 |
+| 10 | 最短路径（Dijkstra, Floyd） | advanced | ✅ 已完成 |
+| 11 | 最小生成树（Kruskal, Prim） | advanced | ✅ 已完成 |
 | **排序与搜索** | | | |
-| 12 | 基础排序（插入、选择、冒泡） | beginner | ⬜ 待添加 |
-| 13 | 高级排序（归并、快排、堆排） | intermediate | ⬜ 待添加 |
-| 14 | 二分搜索 | beginner | ⬜ 待添加 |
+| 12 | 基础排序（插入、选择、冒泡） | beginner | ✅ 已完成 |
+| 13 | 高级排序（归并、快排、堆排） | intermediate | ✅ 已完成 |
+| 14 | 二分搜索 | beginner | ✅ 已完成 |
 | **算法设计** | | | |
-| 15 | 递归与分治 | intermediate | ⬜ 待添加 |
-| 16 | 动态规划 | advanced | ⬜ 待添加 |
-| 17 | 贪心算法 | advanced | ⬜ 待添加 |
-| 18 | 回溯与剪枝 | advanced | ⬜ 待添加 |
+| 15 | 递归与分治 | intermediate | ✅ 已完成 |
+| 16 | 动态规划 | advanced | ✅ 已完成 |
+| 17 | 贪心算法 | advanced | ✅ 已完成 |
+| 18 | 回溯与剪枝 | advanced | ✅ 已完成 |
 | **计算理论** | | | |
-| 19 | 时间复杂度与大 O | intermediate | ⬜ 待添加 |
-| 20 | P vs NP 简述 | advanced | ⬜ 待添加 |
+| 19 | 时间复杂度与大 O | intermediate | ✅ 已完成 |
+| 20 | P vs NP 简述 | advanced | ✅ 已完成 |
 
 **权威教材：** CLRS《Introduction to Algorithms》、Sedgewick《Algorithms》
 
@@ -253,28 +253,28 @@
 
 ### 07-programming-languages — 程序语言理论
 
-约 12-16 个节点。
+14 个节点（全部完成）。
 
 | 层级 | 知识点 | 难度 | 状态 |
 |------|--------|------|------|
 | **语言基础** | | | |
-| 1 | 编程语言范式概述 | beginner | ⬜ 待添加 |
-| 2 | 变量、作用域与绑定 | intermediate | ⬜ 待添加 |
-| 3 | 求值策略（传值、传引用、惰性求值） | intermediate | ⬜ 待添加 |
+| 1 | 编程语言范式概述 | beginner | ✅ 已完成 |
+| 2 | 变量、作用域与绑定 | intermediate | ✅ 已完成 |
+| 3 | 求值策略（传值、传引用、惰性求值） | intermediate | ✅ 已完成 |
 | **函数式编程** | | | |
-| 4 | 高阶函数与闭包 | intermediate | ⬜ 待添加 |
-| 5 | Lambda 演算基础 | advanced | ⬜ 待添加 |
-| 6 | 代数数据类型与模式匹配 | intermediate | ⬜ 待添加 |
-| 7 | 惰性求值与无穷数据结构 | advanced | ⬜ 待添加 |
+| 4 | 高阶函数与闭包 | intermediate | ✅ 已完成 |
+| 5 | Lambda 演算基础 | advanced | ✅ 已完成 |
+| 6 | 代数数据类型与模式匹配 | intermediate | ✅ 已完成 |
+| 7 | 惰性求值与无穷数据结构 | advanced | ✅ 已完成 |
 | **类型系统** | | | |
-| 8 | 静态 vs 动态类型 | intermediate | ⬜ 待添加 |
-| 9 | 类型推导与多态 | advanced | ⬜ 待添加 |
-| 10 | 子类型与变型（协变/逆变） | advanced | ⬜ 待添加 |
+| 8 | 静态 vs 动态类型 | intermediate | ✅ 已完成 |
+| 9 | 类型推导与多态 | advanced | ✅ 已完成 |
+| 10 | 子类型与变型（协变/逆变） | advanced | ✅ 已完成 |
 | **语义与实现** | | | |
-| 11 | 操作语义（小步/大步） | advanced | ⬜ 待添加 |
-| 12 | 垃圾回收机制 | advanced | ⬜ 待添加 |
-| 13 | 并发编程模型（Actor, CSP） | advanced | ⬜ 待添加 |
-| 14 | 领域特定语言（DSL） | advanced | ⬜ 待添加 |
+| 11 | 操作语义（小步/大步） | advanced | ✅ 已完成 |
+| 12 | 垃圾回收机制 | advanced | ✅ 已完成 |
+| 13 | 并发编程模型（Actor, CSP） | advanced | ✅ 已完成 |
+| 14 | 领域特定语言（DSL） | advanced | ✅ 已完成 |
 
 **权威教材：** Pierce《Types and Programming Languages》、Friedman《Essentials of Programming Languages》
 
@@ -282,28 +282,28 @@
 
 ### 08-software-eng — 软件工程
 
-约 12-15 个节点。
+14 个节点（全部完成）。
 
 | 层级 | 知识点 | 难度 | 状态 |
 |------|--------|------|------|
 | **开发流程** | | | |
-| 1 | 软件生命周期与过程模型 | beginner | ⬜ 待添加 |
-| 2 | 敏捷开发与 Scrum | beginner | ⬜ 待添加 |
-| 3 | 版本控制（Git） | beginner | ⬜ 待添加 |
+| 1 | 软件生命周期与过程模型 | beginner | ✅ 已完成 |
+| 2 | 敏捷开发与 Scrum | beginner | ✅ 已完成 |
+| 3 | 版本控制（Git） | beginner | ✅ 已完成 |
 | **需求与设计** | | | |
-| 4 | 需求获取与分析 | intermediate | ⬜ 待添加 |
-| 5 | 软件架构与设计模式 | advanced | ⬜ 待添加 |
-| 6 | UML 建模 | intermediate | ⬜ 待添加 |
-| 7 | SOLID 原则 | intermediate | ⬜ 待添加 |
+| 4 | 需求获取与分析 | intermediate | ✅ 已完成 |
+| 5 | 软件架构与设计模式 | advanced | ✅ 已完成 |
+| 6 | UML 建模 | intermediate | ✅ 已完成 |
+| 7 | SOLID 原则 | intermediate | ✅ 已完成 |
 | **质量** | | | |
-| 8 | 软件测试基础（单元/集成/E2E） | intermediate | ⬜ 待添加 |
-| 9 | CI/CD 与 DevOps | intermediate | ⬜ 待添加 |
-| 10 | 代码审查与重构 | intermediate | ⬜ 待添加 |
+| 8 | 软件测试基础（单元/集成/E2E） | intermediate | ✅ 已完成 |
+| 9 | CI/CD 与 DevOps | intermediate | ✅ 已完成 |
+| 10 | 代码审查与重构 | intermediate | ✅ 已完成 |
 | **工程实践** | | | |
-| 11 | API 设计与 REST | intermediate | ⬜ 待添加 |
-| 12 | 数据库设计与 ORM | intermediate | ⬜ 待添加 |
-| 13 | 安全编程实践 | advanced | ⬜ 待添加 |
-| 14 | 性能分析与调优 | advanced | ⬜ 待添加 |
+| 11 | API 设计与 REST | intermediate | ✅ 已完成 |
+| 12 | 数据库设计与 ORM | intermediate | ✅ 已完成 |
+| 13 | 安全编程实践 | advanced | ✅ 已完成 |
+| 14 | 性能分析与调优 | advanced | ✅ 已完成 |
 
 **权威教材：** Sommerville《Software Engineering》、Martin《Clean Architecture》
 
