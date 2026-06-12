@@ -17,6 +17,9 @@ children:
   - counter
   - ram
   - alu
+  - decoder-encoder
+  - multiplexer
+  - finite-state-machine
 related: []
 prerequisites:
   - boolean-algebra

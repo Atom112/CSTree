@@ -23,8 +23,8 @@
 | **组合逻辑** | | | |
 | 7 | 半加器（Half Adder） | intermediate | ✅ 已完成 |
 | 8 | 全加器（Full Adder） | intermediate | ✅ 已完成 |
-| — | 译码器 / 编码器（Decoder / Encoder） | intermediate | ⬜ 待添加 |
-| — | 多路选择器（Multiplexer / MUX） | intermediate | ⬜ 待添加 |
+| 15 | 译码器 / 编码器（Decoder / Encoder） | intermediate | ✅ 已完成 |
+| 16 | 多路选择器（Multiplexer / MUX） | intermediate | ✅ 已完成 |
 | — | 比较器（Comparator） | intermediate | ⬜ 待添加 |
 | **时序逻辑** | | | |
 | 9 | SR 锁存器（SR Latch） | intermediate | ✅ 已完成 |
@@ -32,7 +32,7 @@
 | — | JK 触发器 / T 触发器 | intermediate | ⬜ 待添加 |
 | 11 | 寄存器（Register） | intermediate | ✅ 已完成 |
 | 12 | 计数器（Counter） | intermediate | ✅ 已完成 |
-| — | 状态机（Finite State Machine） | advanced | ⬜ 待添加 |
+| 17 | 状态机（Finite State Machine） | advanced | ✅ 已完成 |
 | **存储与运算** | | | |
 | 13 | RAM（随机存取存储器） | intermediate | ✅ 已完成 |
 | 14 | ALU（算术逻辑单元） | intermediate | ✅ 已完成 |
