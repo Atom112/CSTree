@@ -9,8 +9,8 @@
 
 ```
 src/content/node/
-├── 00-hardware/        # 硬件方向（已有 20 个节点）
-├── 01-assembly/        # 汇编方向（已有 7 个节点）
+├── 00-hardware/        # 硬件方向（已有 28 个节点）
+├── 01-assembly/        # 汇编方向（已有 14 个节点）
 ├── 02-os/              # 操作系统方向（待添加）
 ├── 03-compilers/       # 编译器方向（待添加）
 ├── 04-networking/      # 网络方向（待添加）
@@ -83,6 +83,30 @@ binary-numbers (二进制数字) [beginner]
               └── rom-flash (只读存储器与闪存) [intermediate]
                     id: rom-flash | order: 17 | parent: logic-gates
                     prerequisites: ram
+              ├── cache-memory (缓存) [advanced]
+              │     id: cache-memory | order: 18 | parent: logic-gates
+              │     prerequisites: ram
+              └── cpu-datapath (CPU数据通路) [advanced]
+                    id: cpu-datapath | order: 19 | parent: logic-gates
+                    prerequisites: alu, register, counter
+                    └── control-unit (控制单元) [advanced]
+                          id: control-unit | order: 20 | parent: cpu-datapath
+                          prerequisites: cpu-datapath
+                          ├── instruction-pipeline (指令流水线) [advanced]
+                          │     id: instruction-pipeline | order: 21 | parent: control-unit
+                          │     prerequisites: control-unit
+                          │     └── modern-cpu-architecture (现代CPU架构) [advanced]
+                          │           id: modern-cpu-architecture | order: 25 | parent: instruction-pipeline
+                          │           prerequisites: instruction-pipeline, cache-memory, risc-vs-cisc
+                          ├── risc-vs-cisc (RISC vs CISC) [advanced]
+                          │     id: risc-vs-cisc | order: 22 | parent: control-unit
+                          │     prerequisites: isa-overview, control-unit
+                          └── interrupts-exceptions (中断与异常) [advanced]
+                                id: interrupts-exceptions | order: 23 | parent: control-unit
+                                prerequisites: control-unit, stack-frames
+                                └── io-interface (I/O接口) [advanced]
+                                      id: io-interface | order: 24 | parent: interrupts-exceptions
+                                      prerequisites: interrupts-exceptions
 ```
 
 ### 01-assembly — 汇编方向
@@ -109,6 +133,27 @@ machine-code (机器码与指令编码) [intermediate]
                                 └── branch-jump-instructions (分支与跳转指令) [intermediate]
                                       id: branch-jump-instructions | order: 7 | parent: flags-condition-codes
                                       prerequisites: flags-condition-codes
+                                      └── stack-frames (栈帧与函数调用约定) [advanced]
+                                            id: stack-frames | order: 8 | parent: branch-jump-instructions
+                                            prerequisites: branch-jump-instructions
+                                            └── parameter-passing (参数传递) [advanced]
+                                                  id: parameter-passing | order: 9 | parent: stack-frames
+                                                  prerequisites: stack-frames
+                                                  └── recursion-assembly (递归的汇编实现) [advanced]
+                                                        id: recursion-assembly | order: 10 | parent: parameter-passing
+                                                        prerequisites: parameter-passing
+                                                        └── inline-assembly (内联汇编与C混合编程) [advanced]
+                                                              id: inline-assembly | order: 11 | parent: recursion-assembly
+                                                              prerequisites: recursion-assembly
+                                                              └── disassembly-debugging (反汇编与调试) [advanced]
+                                                                    id: disassembly-debugging | order: 12 | parent: inline-assembly
+                                                                    prerequisites: inline-assembly
+                                                                    └── buffer-overflow (缓冲区溢出与安全) [advanced]
+                                                                          id: buffer-overflow | order: 13 | parent: disassembly-debugging
+                                                                          prerequisites: disassembly-debugging, stack-frames
+                                                                          └── simd-instructions (SIMD / 向量指令) [advanced]
+                                                                                id: simd-instructions | order: 14 | parent: buffer-overflow
+                                                                                prerequisites: arithmetic-logic-instructions
 ```
 
 ### 02-os — 操作系统方向
@@ -153,13 +198,28 @@ machine-code (机器码与指令编码) [intermediate]
 | 18 | `comparator` | 比较器 | intermediate | logic-gates | 0 | and-gate, or-gate, not-gate |
 | 19 | `jk-t-flipflop` | JK触发器与T触发器 | intermediate | logic-gates | 0 | sr-latch, d-flipflop |
 | 20 | `rom-flash` | 只读存储器与闪存 | intermediate | logic-gates | 0 | ram |
-| 21 | `machine-code` | 机器码与指令编码 | intermediate | — | 0 | binary-numbers, logic-gates |
-| 22 | `isa-overview` | 指令集架构概述 | intermediate | machine-code | 0 | machine-code |
-| 23 | `addressing-modes` | 寻址方式 | intermediate | isa-overview | 0 | isa-overview |
-| 24 | `data-transfer-instructions` | 数据传送指令 | intermediate | addressing-modes | 0 | addressing-modes |
-| 25 | `arithmetic-logic-instructions` | 算术与逻辑指令 | intermediate | data-transfer-instructions | 0 | data-transfer-instructions |
-| 26 | `flags-condition-codes` | 标志位与条件码 | intermediate | arithmetic-logic-instructions | 0 | arithmetic-logic-instructions |
-| 27 | `branch-jump-instructions` | 分支与跳转指令 | intermediate | flags-condition-codes | 0 | flags-condition-codes |
+| 21 | `cache-memory` | 缓存 | advanced | logic-gates | 0 | ram |
+| 22 | `cpu-datapath` | CPU数据通路 | advanced | logic-gates | 1 | alu, register, counter |
+| 23 | `control-unit` | 控制单元 | advanced | cpu-datapath | 3 | cpu-datapath |
+| 24 | `instruction-pipeline` | 指令流水线 | advanced | control-unit | 1 | control-unit |
+| 25 | `risc-vs-cisc` | RISC vs CISC | advanced | control-unit | 0 | isa-overview, control-unit |
+| 26 | `interrupts-exceptions` | 中断与异常 | advanced | control-unit | 1 | control-unit, stack-frames |
+| 27 | `io-interface` | I/O接口 | advanced | interrupts-exceptions | 0 | interrupts-exceptions |
+| 28 | `modern-cpu-architecture` | 现代CPU架构 | advanced | instruction-pipeline | 0 | instruction-pipeline, cache-memory, risc-vs-cisc |
+| 29 | `machine-code` | 机器码与指令编码 | intermediate | — | 0 | binary-numbers, logic-gates |
+| 30 | `isa-overview` | 指令集架构概述 | intermediate | machine-code | 0 | machine-code |
+| 31 | `addressing-modes` | 寻址方式 | intermediate | isa-overview | 0 | isa-overview |
+| 32 | `data-transfer-instructions` | 数据传送指令 | intermediate | addressing-modes | 0 | addressing-modes |
+| 33 | `arithmetic-logic-instructions` | 算术与逻辑指令 | intermediate | data-transfer-instructions | 0 | data-transfer-instructions |
+| 34 | `flags-condition-codes` | 标志位与条件码 | intermediate | arithmetic-logic-instructions | 0 | arithmetic-logic-instructions |
+| 35 | `branch-jump-instructions` | 分支与跳转指令 | intermediate | flags-condition-codes | 1 | flags-condition-codes |
+| 36 | `stack-frames` | 栈帧与函数调用约定 | advanced | branch-jump-instructions | 1 | branch-jump-instructions |
+| 37 | `parameter-passing` | 参数传递 | advanced | stack-frames | 1 | stack-frames |
+| 38 | `recursion-assembly` | 递归的汇编实现 | advanced | parameter-passing | 1 | parameter-passing |
+| 39 | `inline-assembly` | 内联汇编与C混合编程 | advanced | recursion-assembly | 1 | recursion-assembly |
+| 40 | `disassembly-debugging` | 反汇编与调试 | advanced | inline-assembly | 1 | inline-assembly |
+| 41 | `buffer-overflow` | 缓冲区溢出与安全 | advanced | disassembly-debugging | 1 | disassembly-debugging, stack-frames |
+| 42 | `simd-instructions` | SIMD/向量指令 | advanced | buffer-overflow | 0 | arithmetic-logic-instructions |
 
 ---
 

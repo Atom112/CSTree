@@ -37,15 +37,15 @@
 | 13 | RAM（随机存取存储器） | intermediate | ✅ 已完成 |
 | 14 | ALU（算术逻辑单元） | intermediate | ✅ 已完成 |
 | 20 | ROM / Flash / 非易失存储 | intermediate | ✅ 已完成 |
-| — | 缓存（Cache Memory） | advanced | ⬜ 待添加 |
+| 21 | 缓存（Cache Memory） | advanced | ✅ 已完成 |
 | **处理器架构** | | | |
-| — | CPU 数据通路（Datapath） | advanced | ⬜ 待添加 |
-| — | 控制单元（Control Unit） | advanced | ⬜ 待添加 |
-| — | 指令流水线（Instruction Pipeline） | advanced | ⬜ 待添加 |
-| — | RISC vs CISC | advanced | ⬜ 待添加 |
-| — | 中断与异常（Interrupts & Exceptions） | advanced | ⬜ 待添加 |
-| — | I/O 接口（DMA, 内存映射 I/O） | advanced | ⬜ 待添加 |
-| — | 现代 CPU 架构（多核、超线程） | advanced | ⬜ 待添加 |
+| 22 | CPU 数据通路（Datapath） | advanced | ✅ 已完成 |
+| 23 | 控制单元（Control Unit） | advanced | ✅ 已完成 |
+| 24 | 指令流水线（Instruction Pipeline） | advanced | ✅ 已完成 |
+| 25 | RISC vs CISC | advanced | ✅ 已完成 |
+| 26 | 中断与异常（Interrupts & Exceptions） | advanced | ✅ 已完成 |
+| 27 | I/O 接口（DMA, 内存映射 I/O） | advanced | ✅ 已完成 |
+| 28 | 现代 CPU 架构（多核、超线程） | advanced | ✅ 已完成 |
 
 **权威教材：** Patterson & Hennessy《Computer Organization and Design》、Bryant & O'Hallaron《Computer Systems: A Programmer's Perspective》（CS:APP）
 
@@ -67,14 +67,14 @@
 | 6 | 分支与跳转指令 | intermediate | ✅ 已完成 |
 | 7 | 标志位与条件码 | intermediate | ✅ 已完成 |
 | **子程序与栈** | | | |
-| 8 | 栈帧与函数调用约定 | advanced | ⬜ 待添加 |
-| 9 | 参数传递（寄存器 vs 栈） | advanced | ⬜ 待添加 |
-| 10 | 递归的汇编实现 | advanced | ⬜ 待添加 |
+| 8 | 栈帧与函数调用约定 | advanced | ✅ 已完成 |
+| 9 | 参数传递（寄存器 vs 栈） | advanced | ✅ 已完成 |
+| 10 | 递归的汇编实现 | advanced | ✅ 已完成 |
 | **进阶** | | | |
-| 11 | 内联汇编与 C 混合编程 | advanced | ⬜ 待添加 |
-| 12 | 反汇编与调试 | advanced | ⬜ 待添加 |
-| 13 | 缓冲区溢出与安全 | advanced | ⬜ 待添加 |
-| 14 | SIMD / 向量指令 | advanced | ⬜ 待添加 |
+| 11 | 内联汇编与 C 混合编程 | advanced | ✅ 已完成 |
+| 12 | 反汇编与调试 | advanced | ✅ 已完成 |
+| 13 | 缓冲区溢出与安全 | advanced | ✅ 已完成 |
+| 14 | SIMD / 向量指令 | advanced | ✅ 已完成 |
 
 **权威教材：** CS:APP（Bryant & O'Hallaron）第 3 章、 Irvine《Assembly Language for x86 Processors》
 

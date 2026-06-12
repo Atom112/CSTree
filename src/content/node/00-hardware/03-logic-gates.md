@@ -23,6 +23,8 @@ children:
   - comparator
   - jk-t-flipflop
   - rom-flash
+  - cache-memory
+  - cpu-datapath
 related: []
 prerequisites:
   - boolean-algebra
