@@ -68,24 +68,22 @@ graph LR
 
 ```mermaid
 graph TD
-    A[A] --> AND0[与门 0]
-    B[B] --> AND1[与门 1]
-    C[C] --> AND2[与门 2]
-    D[D] --> AND3[与门 3]
+    A[A] --> AND0[与门 0<br>S₁=0,S₀=0]
+    B[B] --> AND1[与门 1<br>S₁=0,S₀=1]
+    C[C] --> AND2[与门 2<br>S₁=1,S₀=0]
+    D[D] --> AND3[与门 3<br>S₁=1,S₀=1]
 
-    S0[S₀] --> NOT0[非门 0]
-    S0[  ] --> NOT1[非门 1]
-    S1[S₁] --> NOT2[非门 2]
-    S1[  ] --> NOT3[非门 3]
+    S0[S₀] --> NOT0[非门 取反 S₀]
+    S0 --> AND1
+    S0 --> AND3
+    S1[S₁] --> NOT2[非门 取反 S₁]
+    S1 --> AND2
+    S1 --> AND3
 
     NOT0 --> AND0
-    NOT2 --> AND0
-    S0 --> AND1
-    NOT2 --> AND1
     NOT0 --> AND2
-    S1 --> AND2
-    S0 --> AND3
-    S1 --> AND3
+    NOT2 --> AND0
+    NOT2 --> AND1
 
     AND0 --> OR[或门]
     AND1 --> OR
