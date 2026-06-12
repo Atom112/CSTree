@@ -47,9 +47,9 @@ const hasAdvanced = advancedCount > 0;
         <div class="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5">进阶</div>
       </button>
       <button data-filter="advanced"
-        class="stat-card p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-center cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all {hasAdvanced ? '' : 'opacity-50'}">
-        <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{advancedCount}</div>
-        <div class="text-xs text-amber-600/70 dark:text-amber-400/70 mt-0.5">高级</div>
+        class="stat-card p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 text-center cursor-pointer hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-all {hasAdvanced ? '' : 'opacity-50'}">
+        <div class="text-2xl font-bold text-violet-600 dark:text-violet-400">{advancedCount}</div>
+        <div class="text-xs text-violet-600/70 dark:text-violet-400/70 mt-0.5">高级</div>
       </button>
     </div>
 
@@ -83,6 +83,12 @@ const hasAdvanced = advancedCount > 0;
       <div id="learning-path" class="space-y-2">
         {sortedNodes.map((n, i) => {
           const children = graph.getChildren(n.id);
+          const diffBadge = n.difficulty === 'beginner'
+            ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+            : n.difficulty === 'intermediate'
+              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+              : 'bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300';
+          const diffLabel = n.difficulty === 'beginner' ? '入门' : n.difficulty === 'intermediate' ? '进阶' : '高级';
           return (
             <div class="node-item flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors" data-difficulty={n.difficulty}>
               <span class="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-bold mt-0.5">
@@ -110,14 +116,8 @@ const hasAdvanced = advancedCount > 0;
                   )}
                 </div>
               </div>
-              <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded
-                {n.difficulty === 'beginner'
-                  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                  : n.difficulty === 'intermediate'
-                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                    : 'bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300'
-                }">
-                {n.difficulty === 'beginner' ? '入门' : n.difficulty === 'intermediate' ? '进阶' : '高级'}
+              <span class={"flex-shrink-0 text-xs px-2 py-0.5 rounded " + diffBadge}>
+                {diffLabel}
               </span>
             </div>
           );
@@ -152,7 +152,7 @@ const hasAdvanced = advancedCount > 0;
         ring: 'ring-2 ring-blue-400 dark:ring-blue-500 ring-offset-2 dark:ring-offset-gray-900',
       },
       advanced: {
-        ring: 'ring-2 ring-amber-400 dark:ring-amber-500 ring-offset-2 dark:ring-offset-gray-900',
+        ring: 'ring-2 ring-violet-400 dark:ring-violet-500 ring-offset-2 dark:ring-offset-gray-900',
       },
     };
 

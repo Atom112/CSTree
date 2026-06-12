@@ -9,7 +9,7 @@
 
 ### 00-hardware — 硬件 / 计算机组成
 
-现有 14 个节点，规划扩展至约 20 个。
+规划扩展至 20+ 个。
 
 | 层级 | 知识点 | 难度 | 状态 |
 |------|--------|------|------|
@@ -58,14 +58,14 @@
 | 层级 | 知识点 | 难度 | 状态 |
 |------|--------|------|------|
 | **指令基础** | | | |
-| 1 | 机器码与指令编码 | intermediate | ⬜ 待添加 |
-| 2 | 指令集架构（ISA）概述 | intermediate | ⬜ 待添加 |
-| 3 | 寻址方式（Addressing Modes） | intermediate | ⬜ 待添加 |
-| 4 | 数据传送指令（MOV / Load / Store） | intermediate | ⬜ 待添加 |
+| 1 | 机器码与指令编码 | intermediate | ✅ 已完成 |
+| 2 | 指令集架构（ISA）概述 | intermediate | ✅ 已完成 |
+| 3 | 寻址方式（Addressing Modes） | intermediate | ✅ 已完成 |
+| 4 | 数据传送指令（MOV / Load / Store） | intermediate | ✅ 已完成 |
 | **运算与控制** | | | |
-| 5 | 算术与逻辑指令 | intermediate | ⬜ 待添加 |
-| 6 | 分支与跳转指令 | intermediate | ⬜ 待添加 |
-| 7 | 标志位与条件码 | intermediate | ⬜ 待添加 |
+| 5 | 算术与逻辑指令 | intermediate | ✅ 已完成 |
+| 6 | 分支与跳转指令 | intermediate | ✅ 已完成 |
+| 7 | 标志位与条件码 | intermediate | ✅ 已完成 |
 | **子程序与栈** | | | |
 | 8 | 栈帧与函数调用约定 | advanced | ⬜ 待添加 |
 | 9 | 参数传递（寄存器 vs 栈） | advanced | ⬜ 待添加 |

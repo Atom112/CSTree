@@ -10,7 +10,7 @@
 ```
 src/content/node/
 ├── 00-hardware/        # 硬件方向（已有 20 个节点）
-├── 01-assembly/        # 汇编方向（待添加）
+├── 01-assembly/        # 汇编方向（已有 7 个节点）
 ├── 02-os/              # 操作系统方向（待添加）
 ├── 03-compilers/       # 编译器方向（待添加）
 ├── 04-networking/      # 网络方向（待添加）
@@ -87,7 +87,29 @@ binary-numbers (二进制数字) [beginner]
 
 ### 01-assembly — 汇编方向
 
-> ⬜ 暂无节点，等待添加
+```
+machine-code (机器码与指令编码) [intermediate]
+  id: machine-code | order: 1 | parent: 无
+  prerequisites: binary-numbers, logic-gates
+  └── isa-overview (指令集架构概述) [intermediate]
+        id: isa-overview | order: 2 | parent: machine-code
+        prerequisites: machine-code
+        └── addressing-modes (寻址方式) [intermediate]
+              id: addressing-modes | order: 3 | parent: isa-overview
+              prerequisites: isa-overview
+              └── data-transfer-instructions (数据传送指令) [intermediate]
+                    id: data-transfer-instructions | order: 4 | parent: addressing-modes
+                    prerequisites: addressing-modes
+                    └── arithmetic-logic-instructions (算术与逻辑指令) [intermediate]
+                          id: arithmetic-logic-instructions | order: 5 | parent: data-transfer-instructions
+                          prerequisites: data-transfer-instructions
+                          └── flags-condition-codes (标志位与条件码) [intermediate]
+                                id: flags-condition-codes | order: 6 | parent: arithmetic-logic-instructions
+                                prerequisites: arithmetic-logic-instructions
+                                └── branch-jump-instructions (分支与跳转指令) [intermediate]
+                                      id: branch-jump-instructions | order: 7 | parent: flags-condition-codes
+                                      prerequisites: flags-condition-codes
+```
 
 ### 02-os — 操作系统方向
 
@@ -131,6 +153,13 @@ binary-numbers (二进制数字) [beginner]
 | 18 | `comparator` | 比较器 | intermediate | logic-gates | 0 | and-gate, or-gate, not-gate |
 | 19 | `jk-t-flipflop` | JK触发器与T触发器 | intermediate | logic-gates | 0 | sr-latch, d-flipflop |
 | 20 | `rom-flash` | 只读存储器与闪存 | intermediate | logic-gates | 0 | ram |
+| 21 | `machine-code` | 机器码与指令编码 | intermediate | — | 0 | binary-numbers, logic-gates |
+| 22 | `isa-overview` | 指令集架构概述 | intermediate | machine-code | 0 | machine-code |
+| 23 | `addressing-modes` | 寻址方式 | intermediate | isa-overview | 0 | isa-overview |
+| 24 | `data-transfer-instructions` | 数据传送指令 | intermediate | addressing-modes | 0 | addressing-modes |
+| 25 | `arithmetic-logic-instructions` | 算术与逻辑指令 | intermediate | data-transfer-instructions | 0 | data-transfer-instructions |
+| 26 | `flags-condition-codes` | 标志位与条件码 | intermediate | arithmetic-logic-instructions | 0 | arithmetic-logic-instructions |
+| 27 | `branch-jump-instructions` | 分支与跳转指令 | intermediate | flags-condition-codes | 0 | flags-condition-codes |
 
 ---
 

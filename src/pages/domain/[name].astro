@@ -1,0 +1,146 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TreeNodeBranch from '../../components/TreeNodeBranch.astro';
+import { getCollection } from 'astro:content';
+import { resolveGraph, topologicalSort } from '../../utils/graph';
+import { fromCollection } from '../../utils/types';
+
+// ── Domain configuration ──
+// (duplicated inside getStaticPaths to work around Astro compiler scope)
+const DOMAIN_MAP: Record<string, { dir: string; title: string; desc: string }> = {
+  hardware:    { dir: '00-hardware',    title: '硬件基础',     desc: '逻辑门、触发器、寄存器、ALU — 从晶体管到CPU的完整硬件体系' },
+  assembly:    { dir: '01-assembly',    title: '汇编语言',     desc: '指令集、寻址模式、调用约定 — 理解CPU的母语' },
+  os:          { dir: '02-os',          title: '操作系统',     desc: '进程管理、内存管理、文件系统 — 计算机的资源管理器' },
+  compilers:   { dir: '03-compilers',   title: '编译原理',     desc: '词法分析、语法分析、代码生成 — 高级语言的翻译官' },
+  networking:  { dir: '04-networking',  title: '计算机网络',   desc: 'TCP/IP、HTTP、路由协议 — 连接世界的神经系统' },
+  databases:   { dir: '05-databases',   title: '数据库系统',   desc: 'SQL、索引、事务、B+树 — 数据持久化的基石' },
+};
+
+export async function getStaticPaths() {
+  return [
+    { params: { name: 'hardware' } },
+    { params: { name: 'assembly' } },
+    { params: { name: 'os' } },
+    { params: { name: 'compilers' } },
+    { params: { name: 'networking' } },
+    { params: { name: 'databases' } },
+  ];
+}
+
+const { name } = Astro.params;
+const domain = DOMAIN_MAP[name!];
+
+const allEntries = await getCollection('node');
+const entries = allEntries.filter((e) => e.id.startsWith(domain.dir));
+const nodeData = fromCollection(entries);
+const graph = resolveGraph(nodeData);
+const rootNodes = graph.rootNodes;
+const sortedNodes = topologicalSort(nodeData);
+
+// Stats
+const totalNodes = nodeData.length;
+const beginnerCount = nodeData.filter((n) => n.difficulty === 'beginner').length;
+const intermediateCount = nodeData.filter((n) => n.difficulty === 'intermediate').length;
+const advancedCount = nodeData.filter((n) => n.difficulty === 'advanced').length;
+const hasContent = totalNodes > 0;
+---
+
+<BaseLayout title={domain.title}>
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-2">
+      <a href="/" class="text-sm text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+        ← 返回知识树
+      </a>
+    </div>
+    <h1 class="text-3xl font-bold mb-2">{domain.title}</h1>
+    <p class="text-gray-600 dark:text-gray-400 mb-6">{domain.desc}</p>
+
+    {hasContent ? (
+      <>
+        <!-- Stats -->
+        <div class="flex gap-3 mb-8">
+          <span class="text-sm px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+            {totalNodes} 个节点
+          </span>
+          {beginnerCount > 0 && (
+            <span class="text-sm px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300">
+              入门 {beginnerCount}
+            </span>
+          )}
+          {intermediateCount > 0 && (
+            <span class="text-sm px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+              进阶 {intermediateCount}
+            </span>
+          )}
+          {advancedCount > 0 && (
+            <span class="text-sm px-3 py-1 rounded-full bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300">
+              高级 {advancedCount}
+            </span>
+          )}
+        </div>
+
+        <!-- Tree view -->
+        {rootNodes.length > 0 && (
+          <section class="mb-10">
+            <h2 class="text-xl font-bold mb-4">🌳 知识结构</h2>
+            <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-4">
+              {rootNodes.map((root) => (
+                <TreeNodeBranch
+                  nodeId={root.id}
+                  nodeMap={graph.nodeMap}
+                  getChildren={graph.getChildren}
+                  depth={0}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <!-- Learning path -->
+        <section>
+          <h2 class="text-xl font-bold mb-4">📋 学习路径</h2>
+          <div class="space-y-2">
+            {sortedNodes.map((n, i) => {
+              const children = graph.getChildren(n.id);
+              const diffBadge = n.difficulty === 'beginner'
+                ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                : n.difficulty === 'intermediate'
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  : 'bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300';
+              const diffLabel = n.difficulty === 'beginner' ? '入门' : n.difficulty === 'intermediate' ? '进阶' : '高级';
+              return (
+                <div class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                  <span class="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-bold mt-0.5">
+                    {i + 1}
+                  </span>
+                  <div class="flex-1 min-w-0">
+                    <a href={`/node/${n.id}`} class="font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                      {n.title}
+                    </a>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{n.summary}</p>
+                    <div class="flex flex-wrap gap-1.5 mt-1">
+                      {n.tags.map((tag) => (
+                        <span class="text-xs text-gray-400 dark:text-gray-500">#{tag}</span>
+                      ))}
+                      {children.length > 0 && <span class="text-xs text-blue-400">{children.length} 个子节点</span>}
+                      {n.prerequisites.length > 0 && <span class="text-xs text-amber-400">{n.prerequisites.length} 个前置</span>}
+                    </div>
+                  </div>
+                  <span class={"flex-shrink-0 text-xs px-2 py-0.5 rounded " + diffBadge}>{diffLabel}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </>
+    ) : (
+      <!-- Empty state -->
+      <div class="text-center py-20">
+        <div class="text-5xl mb-4 opacity-50">📚</div>
+        <p class="text-xl text-gray-400 dark:text-gray-500 font-medium">该模块暂无内容</p>
+        <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">敬请期待后续更新</p>
+      </div>
+    )}
+  </div>
+</BaseLayout>

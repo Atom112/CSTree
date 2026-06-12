@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import * as d3 from 'd3';
 
 interface NodeData {
   id: string;
@@ -15,329 +14,481 @@ interface Props {
   currentNodeId?: string;
 }
 
-const NODE_W = 136;
-const NODE_H = 38;
-const NODE_RX = 10;
+// ============================================================
+//  Constants
+// ============================================================
+const PADDING = 12;
+const NODE_H = 22;
+const NODE_W = 80;
+const BUNDLE_W = 14;
+const LEVEL_Y_PAD = 16;
+const METRO_D = 4;
+const MIN_FAMILY_H = 22;
+const C = 16;
+const BIG_C = NODE_W + C;
 
-/** Difficulty → color palette */
-const DIFF_COLORS: Record<string, { bg: string; stroke: string; text: string }> = {
-  beginner:   { bg: '#dcfce7', stroke: '#86efac', text: '#166534' },
-  intermediate: { bg: '#dbeafe', stroke: '#93c5fd', text: '#1e40af' },
-  advanced:  { bg: '#ede9fe', stroke: '#c4b5fd', text: '#5b21b6' },
+const DIFF_COLORS: Record<string, string> = {
+  beginner: '#22c55e',
+  intermediate: '#3b82f6',
+  advanced: '#8b5cf6',
 };
-const DIFF_COLORS_DARK: Record<string, { bg: string; stroke: string; text: string }> = {
-  beginner:   { bg: '#064e3b', stroke: '#059669', text: '#86efac' },
-  intermediate: { bg: '#1e3a5f', stroke: '#2563eb', text: '#93c5fd' },
-  advanced:  { bg: '#3b1f6e', stroke: '#7c3aed', text: '#c4b5fd' },
+const DIFF_COLORS_DARK: Record<string, string> = {
+  beginner: '#4ade80',
+  intermediate: '#60a5fa',
+  advanced: '#a78bfa',
 };
+const DIFF_LABELS: Record<string, string> = {
+  beginner: '入门',
+  intermediate: '进阶',
+  advanced: '高级',
+};
+const ROOT_LINE = '#94a3b8';
+const CUR_COLOR = '#2563eb';
 
-const ROOT_BG = '#f8fafc';
-const ROOT_STROKE = '#cbd5e1';
-const ROOT_BG_DARK = '#1e293b';
-const ROOT_STROKE_DARK = '#475569';
+type TNode = any;
 
-const CUR_BG = '#2563eb';
-const CUR_STROKE = '#1d4ed8';
-const CUR_TEXT = '#ffffff';
+// ============================================================
+//  buildLevels — flat node list → levels[][]
+// ============================================================
+function buildLevels(nodes: NodeData[]) {
+  const parentMap = new Map<string, string | null>();
+  nodes.forEach((n) => parentMap.set(n.id, n.parent ?? null));
 
-/**
- * Generate a rounded orthogonal (step) path between two points.
- * Corner radius is adaptive to the available space.
- */
-function roundedStepPath(
-  sx: number, sy: number,
-  tx: number, ty: number,
-): string {
-  const gap = Math.abs(tx - sx);
-  if (gap < 4) {
-    // Nearly vertical — straight line
-    return `M${sx},${sy}V${ty}`;
+  // ── Inject virtual "CSTree" root if there are multiple section roots ──
+  const sectionRoots = nodes.filter((n) => !n.parent);
+  let hasVirtualRoot = false;
+  if (sectionRoots.length > 1) {
+    hasVirtualRoot = true;
+    const vid = '__cstree_root__';
+    parentMap.set(vid, null);
+    sectionRoots.forEach((n) => parentMap.set(n.id, vid));
   }
 
-  const dir = tx >= sx ? 1 : -1;
-  const midY = (sy + ty) / 2;
-  const r = Math.min(8, gap / 3, (ty - sy) / 5);
+  function getDepth(id: string, memo: Map<string, number>): number {
+    if (memo.has(id)) return memo.get(id)!;
+    const p = parentMap.get(id);
+    if (!p) { memo.set(id, 0); return 0; }
+    const d = getDepth(p, memo) + 1;
+    memo.set(id, d);
+    return d;
+  }
 
-  return [
-    `M${sx},${sy}`,
-    `V${midY - r}`,
-    `Q${sx},${midY} ${sx + dir * r},${midY}`,
-    `H${tx - dir * r}`,
-    `Q${tx},${midY} ${tx},${midY + r}`,
-    `V${ty}`,
-  ].join('');
+  const depthMemo = new Map<string, number>();
+  const byDepth = new Map<number, TNode[]>();
+
+  // Create virtual root node first
+  if (hasVirtualRoot) {
+    byDepth.set(0, [{
+      id: '__cstree_root__',
+      title: 'CSTree',
+      level: 0,
+      parents: [],
+      height: 0, x: 0, y: 0,
+      difficulty: 'beginner',
+      bundles: [],
+      bundles_index: {},
+      bundle: undefined,
+      isVirtual: true,
+    }]);
+    depthMemo.set('__cstree_root__', 0);
+  }
+
+  nodes.forEach((n) => {
+    const d = getDepth(n.id, depthMemo);
+    const internal: TNode = {
+      id: n.id,
+      title: n.title,
+      level: d,
+      parents: parentMap.get(n.id) ? [parentMap.get(n.id)!] : [],
+      height: 0, x: 0, y: 0,
+      difficulty: n.difficulty || 'beginner',
+      bundles: [], bundles_index: {},
+      bundle: undefined,
+      isVirtual: false,
+    };
+    if (!byDepth.has(d)) byDepth.set(d, []);
+    byDepth.get(d)!.push(internal);
+  });
+
+  const maxD = Math.max(...byDepth.keys());
+  const levels: TNode[][] = [];
+  for (let d = 0; d <= maxD; d++) levels.push(byDepth.get(d) || []);
+
+  const nodeIndex: Record<string, TNode> = {};
+  levels.forEach((l) => l.forEach((n) => (nodeIndex[n.id] = n)));
+
+  return { levels, nodeIndex };
 }
 
-// (shadow filters created dynamically inside renderTree)
+// ============================================================
+//  tangledLayout — full Tangled Tree layout algorithm
+// ============================================================
+function tangledLayout(levels: TNode[][], nodeIndex: Record<string, TNode>, isDark: boolean) {
+  // 1. Objectify parents
+  levels.forEach((l) => l.forEach((n) => {
+    n.parents = n.parents.map((pid: string) => nodeIndex[pid]).filter(Boolean);
+  }));
 
+  // 2. Bundles per level
+  levels.forEach((l, i) => {
+    const idx: Record<string, any> = {};
+    l.forEach((n) => {
+      if (n.parents.length === 0) return;
+      const key = n.parents.map((p: TNode) => p.id).sort().join('-X-');
+      if (key in idx) {
+        idx[key].parents = idx[key].parents.concat(n.parents);
+      } else {
+        idx[key] = {
+          id: key, parents: n.parents.slice(), level: i,
+          span: i - Math.min(...n.parents.map((p: TNode) => p.level)),
+          links: [],
+        };
+      }
+      n.bundle = idx[key];
+    });
+    l.bundles = Object.keys(idx).map((k) => idx[k]);
+    l.bundles.forEach((b, i) => (b.i = i));
+  });
+
+  // 3. Links
+  const links: any[] = [];
+  levels.forEach((l) => l.forEach((n) => n.parents.forEach((p: TNode) => links.push({ source: n, bundle: n.bundle, target: p }))));
+
+  // 4. All bundles
+  const allBundles: any[] = [];
+  levels.forEach((l) => allBundles.push(...l.bundles));
+
+  // 5. Reverse index (parent → bundles)
+  allBundles.forEach((b) => b.parents.forEach((p: TNode) => {
+    if (!p.bundles_index) p.bundles_index = {};
+    if (!(b.id in p.bundles_index)) p.bundles_index[b.id] = [];
+    p.bundles_index[b.id].push(b);
+  }));
+
+  // 6. Sort bundles by span
+  Object.values(nodeIndex).forEach((n: TNode) => {
+    if (n.bundles_index) {
+      n.bundles = Object.keys(n.bundles_index).map((k) => n.bundles_index[k]);
+      n.bundles.sort((a: any, b: any) => Math.max(...b.map((d: any) => d.span)) - Math.max(...a.map((d: any) => d.span)));
+      n.bundles.forEach((b: any, i: number) => (b.i = i));
+    } else {
+      n.bundles_index = {};
+      n.bundles = [];
+    }
+  });
+
+  // 7. Wire links
+  links.forEach((l) => l.bundle.links.push(l));
+
+  // 8. Node heights
+  Object.values(nodeIndex).forEach((n: TNode) => (n.height = (Math.max(1, n.bundles.length) - 1) * METRO_D));
+
+  // 9. Position nodes
+  let xOff = PADDING, yOff = PADDING;
+  levels.forEach((l) => {
+    xOff += l.bundles.length * BUNDLE_W;
+    yOff += LEVEL_Y_PAD;
+    l.forEach((n: TNode) => {
+      n.x = n.level * NODE_W + xOff;
+      n.y = NODE_H + yOff + n.height / 2;
+      yOff += NODE_H + n.height;
+    });
+  });
+
+  // 10. Position bundles
+  let nodeCnt = 0;
+  levels.forEach((l) => {
+    l.bundles.forEach((b: any) => {
+      b.x = Math.max(...b.parents.map((p: TNode) => p.x)) + NODE_W + (l.bundles.length - 1 - b.i) * BUNDLE_W;
+      b.y = nodeCnt * NODE_H;
+    });
+    nodeCnt += l.length;
+  });
+
+  // 11. Link geometry (first pass)
+  links.forEach((l: any) => {
+    l.xt = l.target.x;
+    l.yt = (l.target.bundles_index[l.bundle.id]?.i ?? 0) * METRO_D - (l.target.bundles.length * METRO_D) / 2 + METRO_D / 2 + l.target.y;
+    l.xb = l.bundle.x;
+    l.yb = l.bundle.y;
+    l.xs = l.source.x;
+    l.ys = l.source.y;
+  });
+
+  // 12. Vertical compression
+  let yCompress = 0;
+  levels.forEach((l) => {
+    const minGap = l.bundles.length > 0
+      ? Math.min(...l.bundles.map((b: any) => Math.min(...b.links.map((lk: any) => lk.ys - 2 * C - (lk.yt + C)))))
+      : 0;
+    if (l.bundles.length > 0) yCompress += -MIN_FAMILY_H + minGap;
+    l.forEach((n: TNode) => (n.y -= yCompress));
+  });
+
+  // 13. Link geometry (second pass)
+  links.forEach((l: any) => {
+    l.yt = (l.target.bundles_index[l.bundle.id]?.i ?? 0) * METRO_D - (l.target.bundles.length * METRO_D) / 2 + METRO_D / 2 + l.target.y;
+    l.ys = l.source.y;
+    l.c1 = (l.source.level - l.target.level) > 1 ? Math.min(BIG_C, l.xb - l.xt, l.yb - l.yt) - C : C;
+    l.c2 = C;
+  });
+
+  // 14. Final dimensions
+  const allX = Object.values(nodeIndex).map((n: TNode) => n.x);
+  const allY = Object.values(nodeIndex).map((n: TNode) => n.y);
+  const layout = {
+    width: Math.max(...allX, 0) + NODE_W + 2 * PADDING,
+    height: Math.max(...allY, 0) + NODE_H / 2 + 2 * PADDING,
+  };
+
+  // 15. Bundle colors (from parent difficulty)
+  const palette = isDark ? DIFF_COLORS_DARK : DIFF_COLORS;
+  allBundles.forEach((b: any) => {
+    const parentDiff = b.parents.length > 0 ? b.parents[0].difficulty || 'beginner' : 'beginner';
+    b.color = palette[parentDiff] || palette.beginner;
+  });
+
+  return { levels, nodes: Object.values(nodeIndex), links, bundles: allBundles, layout, nodeIndex };
+}
+
+// ============================================================
+//  React component
+// ============================================================
 export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const layoutRef = useRef<any>(null);
+  const viewRef = useRef({ x: 0, y: 0, scale: 1 });
+  const dragRef = useRef<{ sx: number; sy: number; vx: number; vy: number; moved: boolean } | null>(null);
   const [ready, setReady] = useState(false);
-  const dimsRef = useRef({ width: 800, height: 500 });
 
-  // Mark as client-ready
   useEffect(() => { setReady(true); }, []);
 
-  // Measure & render
-  useEffect(() => {
-    if (!ready || !containerRef.current) return;
-    const el = containerRef.current;
-    const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      dimsRef.current = { width: rect.width, height: rect.height };
-    }
-    renderTree();
+  // ---- Apply current view transform to the SVG content group ----
+  const applyView = useCallback(() => {
+    const g = svgRef.current?.querySelector('.tree-content') as SVGGElement;
+    if (!g) return;
+    const v = viewRef.current;
+    g.setAttribute('transform', `translate(${v.x},${v.y}) scale(${v.scale})`);
+  }, []);
 
-    const ro = new ResizeObserver(() => {
-      const r = el.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) {
-        dimsRef.current = { width: r.width, height: r.height };
-        renderTree();
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [ready]);
-
+  // ---- Compute layout, render content, auto-fit ----
   const renderTree = useCallback(() => {
-    const svgEl = svgRef.current;
-    if (!svgEl || nodes.length === 0) return;
+    const svg = svgRef.current;
+    const container = containerRef.current;
+    if (!svg || !container || nodes.length === 0) return;
 
-    const { width, height } = dimsRef.current;
-    if (width < 100 || height < 100) return;
-
-    // Detect dark mode
     const isDark = document.documentElement.classList.contains('dark');
+    const { levels, nodeIndex } = buildLevels(nodes);
+    const tl = tangledLayout(levels, nodeIndex, isDark);
+    layoutRef.current = tl;
 
-    // ── Build hierarchy ──
-    const validNodes = nodes.filter((n) => !n.parent || nodes.some((p) => p.id === n.parent));
-    let root: d3.HierarchyNode<NodeData>;
-    try {
-      root = d3.stratify<NodeData>()
-        .id((d) => d.id)
-        .parentId((d) => (d.parent ? d.parent : null))(validNodes);
-    } catch {
-      return;
-    }
+    // Build SVG content
+    const bgColor = isDark ? '#111827' : '#ffffff';
+    const pal = isDark ? DIFF_COLORS_DARK : DIFF_COLORS;
+    let html = `<style>
+      .tree-content { vector-effect: non-scaling-stroke; }
+      .link { fill: none; }
+      .node-group { cursor: pointer; }
+      .virtual-root { cursor: default; }
+      .node-hit { fill: transparent; }
+      .node-group:hover .node-line { stroke: #60a5fa !important; }
+      .node-group:hover .node-text { fill: #60a5fa !important; }
+      .node-line { stroke-linecap: round; vector-effect: non-scaling-stroke; }
+      .node-text { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; user-select: none; }
+      .badge-text { font-family: system-ui, sans-serif; font-size: 9px; font-weight: 700; user-select: none; }
+    </style>
+    <g class="tree-content">`;
 
-    // ── Layout ──
-    // Count max nodes per depth to auto-space crowded levels
-    const depthCounts: Record<number, number> = {};
-    root.each((d) => { depthCounts[d.depth] = (depthCounts[d.depth] || 0) + 1; });
-    const maxAtDepth = Math.max(...Object.values(depthCounts), 1);
-
-    // Dynamic sizing: each node gets at least (NODE_W + gap) px horizontally
-    const MIN_NODE_GAP = NODE_W + 48;
-    const layoutWidth = Math.max(width - 100, maxAtDepth * MIN_NODE_GAP);
-
-    const treeLayout = d3.tree<NodeData>()
-      .size([layoutWidth, height - 120])
-      .separation((a, b) => (a.parent === b.parent ? 1.5 : 2.2));
-    treeLayout(root);
-
-    // ── SVG ──
-    const svg = d3.select(svgEl);
-    svg.selectAll('*').remove();
-    svg.attr('width', width).attr('height', height);
-
-    // Inject filter defs
-    svg.node()?.appendChild(
-      (document.importNode
-        ? document.importNode(
-            // Create shadow filter dynamically
-            (() => {
-              const xmlns = 'http://www.w3.org/2000/svg';
-              const defs = document.createElementNS(xmlns, 'defs');
-
-              const filter1 = document.createElementNS(xmlns, 'filter');
-              filter1.setAttribute('id', 'kn-shadow');
-              filter1.setAttribute('x', '-10%'); filter1.setAttribute('y', '-10%');
-              filter1.setAttribute('width', '130%'); filter1.setAttribute('height', '130%');
-              const fd1 = document.createElementNS(xmlns, 'feDropShadow');
-              fd1.setAttribute('dx', '0'); fd1.setAttribute('dy', '2');
-              fd1.setAttribute('stdDeviation', '3');
-              fd1.setAttribute('flood-color', '#000'); fd1.setAttribute('flood-opacity', '0.12');
-              filter1.appendChild(fd1);
-              defs.appendChild(filter1);
-
-              const filter2 = document.createElementNS(xmlns, 'filter');
-              filter2.setAttribute('id', 'kn-shadow-current');
-              filter2.setAttribute('x', '-20%'); filter2.setAttribute('y', '-20%');
-              filter2.setAttribute('width', '150%'); filter2.setAttribute('height', '150%');
-              const fd2 = document.createElementNS(xmlns, 'feDropShadow');
-              fd2.setAttribute('dx', '0'); fd2.setAttribute('dy', '2');
-              fd2.setAttribute('stdDeviation', '6');
-              fd2.setAttribute('flood-color', '#2563eb'); fd2.setAttribute('flood-opacity', '0.4');
-              filter2.appendChild(fd2);
-              defs.appendChild(filter2);
-
-              return defs;
-            })(),
-            true,
-          )
-        : null),
-    );
-
-    // ── Zoom ──
-    const g = svg.append('g').attr('class', 'tree-group');
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.15, 4])
-      .on('zoom', (event) => { g.attr('transform', event.transform); });
-    svg.call(zoom);
-
-    // Auto-fit: center tree horizontally, scale to fit width
-    const extent = root as unknown as d3.HierarchyPointNode<NodeData>;
-    const treeWidth = extent.x * 2 + NODE_W;
-    const initScale = Math.min(1, Math.max(0.3, (width - 40) / Math.max(treeWidth, 80)));
-    const initX = Math.max(20, (width - treeWidth * initScale) / 2);
-    svg.call(zoom.transform, d3.zoomIdentity.translate(initX, 50).scale(initScale));
-
-    // ── Rounded-step edges ──
-    g.selectAll('.tree-edge')
-      .data(root.links())
-      .join('path')
-      .attr('class', 'tree-edge')
-      .attr('d', (d) => {
-        const s = d.source as unknown as d3.HierarchyPointNode<NodeData>;
-        const t = d.target as unknown as d3.HierarchyPointNode<NodeData>;
-        return roundedStepPath(s.x, s.y + NODE_H / 2, t.x, t.y - NODE_H / 2);
-      })
-      .attr('fill', 'none')
-      .attr('stroke', isDark ? '#334155' : '#94a3b8')
-      .attr('stroke-width', 2)
-      .attr('stroke-linecap', 'round')
-      .attr('stroke-linejoin', 'round');
-
-    // ── Node groups ──
-    const nodeGroups = g.selectAll('.tree-node')
-      .data(root.descendants())
-      .join('g')
-      .attr('class', 'tree-node')
-      .attr('transform', (d) => {
-        const p = d as unknown as d3.HierarchyPointNode<NodeData>;
-        return `translate(${p.x - NODE_W / 2},${p.y - NODE_H / 2})`;
-      })
-      .style('cursor', 'pointer')
-      .on('click', (_e, d) => { window.location.href = `/node/${d.data.id}`; });
-
-    // ── Node rect ──
-    nodeGroups.append('rect')
-      .attr('width', NODE_W)
-      .attr('height', NODE_H)
-      .attr('rx', NODE_RX)
-      .attr('fill', (d) => {
-        if (d.data.id === currentNodeId) return CUR_BG;
-        const diff = d.data.difficulty || 'beginner';
-        const pal = isDark ? DIFF_COLORS_DARK : DIFF_COLORS;
-        if (d.parent) return pal[diff]?.bg ?? pal.beginner.bg;
-        return isDark ? ROOT_BG_DARK : ROOT_BG;
-      })
-      .attr('stroke', (d) => {
-        if (d.data.id === currentNodeId) return CUR_STROKE;
-        const diff = d.data.difficulty || 'beginner';
-        const pal = isDark ? DIFF_COLORS_DARK : DIFF_COLORS;
-        if (d.parent) return pal[diff]?.stroke ?? pal.beginner.stroke;
-        return isDark ? ROOT_STROKE_DARK : ROOT_STROKE;
-      })
-      .attr('stroke-width', (d) => (d.data.id === currentNodeId ? 2.5 : 1.5))
-      .attr('filter', (d) => (d.data.id === currentNodeId ? 'url(#kn-shadow-current)' : 'url(#kn-shadow)'));
-
-    // ── Hover ──
-    nodeGroups.on('mouseenter', function () {
-      const d = (this as SVGGElement).__data__ as d3.HierarchyNode<NodeData>;
-      if (d.data.id !== currentNodeId) {
-        const rect = d3.select(this).select('rect');
-        rect.attr('filter', null);
-        rect.attr('stroke', '#60a5fa').attr('stroke-width', 2.5);
-      }
-    }).on('mouseleave', function () {
-      const d = (this as SVGGElement).__data__ as d3.HierarchyNode<NodeData>;
-      if (d.data.id !== currentNodeId) {
-        const rect = d3.select(this).select('rect');
-        rect.attr('filter', 'url(#kn-shadow)');
-        const diff = d.data.difficulty || 'beginner';
-        const pal = isDark ? DIFF_COLORS_DARK : DIFF_COLORS;
-        const stroke = d.parent ? (pal[diff]?.stroke ?? pal.beginner.stroke) : (isDark ? ROOT_STROKE_DARK : ROOT_STROKE);
-        rect.attr('stroke', stroke).attr('stroke-width', 1.5);
-      }
-    });
-
-    // ── Difficulty dot (left side) ──
-    nodeGroups.append('circle')
-      .attr('cx', 10)
-      .attr('cy', NODE_H / 2)
-      .attr('r', 4)
-      .attr('fill', (d) => {
-        if (d.data.id === currentNodeId) return '#ffffff';
-        const diff = d.data.difficulty || 'beginner';
-        const pal = isDark ? DIFF_COLORS_DARK : DIFF_COLORS;
-        if (d.parent) return pal[diff]?.stroke ?? pal.beginner.stroke;
-        return isDark ? ROOT_STROKE_DARK : ROOT_STROKE;
-      })
-      .attr('opacity', 0.7);
-
-    // ── Text ──
-    nodeGroups.append('text')
-      .attr('x', 20)
-      .attr('y', NODE_H / 2)
-      .attr('text-anchor', 'start')
-      .attr('dominant-baseline', 'central')
-      .attr('fill', (d) => (d.data.id === currentNodeId ? CUR_TEXT : (isDark ? '#f1f5f9' : '#1e293b')))
-      .attr('font-size', '12.5px')
-      .attr('font-weight', '600')
-      .text((d) => {
-        const t = d.data.title;
-        return t.length > 10 ? t.slice(0, 9) + '…' : t;
+    // Bundles (edges)
+    tl.bundles.forEach((b: any) => {
+      let d = '';
+      b.links.forEach((l: any) => {
+        d += `M${l.xt} ${l.yt}L${l.xb - l.c1} ${l.yt}A${l.c1} ${l.c1} 90 0 1 ${l.xb} ${l.yt + l.c1}L${l.xb} ${l.ys - l.c2}A${l.c2} ${l.c2} 90 0 0 ${l.xb + l.c2} ${l.ys}L${l.xs} ${l.ys}`;
       });
-
-    // ── Child count badge (right side) ──
-    nodeGroups.each(function (d) {
-      const childCount = d.children?.length ?? 0;
-      if (childCount === 0) return;
-
-      const group = d3.select(this);
-      const badge = group.append('g')
-        .attr('transform', `translate(${NODE_W - 16},${NODE_H / 2})`);
-
-      badge.append('circle')
-        .attr('r', 8)
-        .attr('fill', d.data.id === currentNodeId ? 'rgba(255,255,255,0.2)' : (isDark ? '#374151' : '#e2e8f0'));
-
-      badge.append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'central')
-        .attr('font-size', '9px')
-        .attr('font-weight', '700')
-        .attr('fill', d.data.id === currentNodeId ? '#ffffff' : (isDark ? '#94a3b8' : '#64748b'))
-        .text(childCount);
+      html += `<path class="link" d="${d}" stroke="${bgColor}" stroke-width="5"/>`;
+      html += `<path class="link" d="${d}" stroke="${b.color}" stroke-width="2"/>`;
     });
 
-    // ── Current-node indicator ──
-    if (currentNodeId) {
-      const cur = root.descendants().find((d) => d.data.id === currentNodeId);
-      if (cur) {
-        const p = cur as unknown as d3.HierarchyPointNode<NodeData>;
-        g.append('rect')
-          .attr('x', p.x - 16)
-          .attr('y', p.y - NODE_H / 2 - 12)
-          .attr('width', 32)
-          .attr('height', 6)
-          .attr('rx', 3)
-          .attr('fill', CUR_BG);
-      }
-    }
-  }, [nodes, currentNodeId]);
+    // Nodes
+    tl.nodes.forEach((n: TNode) => {
+      const isVirtual = n.isVirtual;
+      const isCurrent = n.id === currentNodeId;
 
+      if (isVirtual) {
+        // ── Virtual root: special rendering (no click, distinct style) ──
+        const vx = n.x, vy = n.y;
+        const cFill = isDark ? '#1e293b' : '#f1f5f9';
+        const cStroke = isDark ? '#475569' : '#94a3b8';
+        const cText = isDark ? '#f1f5f9' : '#1e293b';
+        html += `<g class="virtual-root" style="cursor:default">`;
+        // Background pill for the root label
+        html += `<rect x="${vx - 32}" y="${vy - 12}" width="64" height="24" rx="12" fill="${cFill}" stroke="${cStroke}" stroke-width="1.5"/>`;
+        html += `<text x="${vx}" y="${vy + 4}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12px" font-weight="700" fill="${cText}">CSTree</text>`;
+        html += `</g>`;
+        return;
+      }
+
+      const lineColor = isCurrent ? CUR_COLOR : n.parents.length === 0 ? ROOT_LINE : (pal[n.difficulty] || pal.beginner);
+      const lineY1 = n.y - n.height / 2;
+      const lineY2 = n.y + n.height / 2;
+      const label = n.title.length > 10 ? n.title.slice(0, 9) + '…' : n.title;
+      const childCount = Object.values(nodeIndex).filter((nd: any) => nd.parents.some((p: TNode) => p.id === n.id)).length;
+
+      // Hit area rect (large click target)
+      const hitX = n.x - 8;
+      const hitY = lineY1 - 22;
+      const hitW = NODE_W + 20;
+      const hitH = Math.max(lineY2 - lineY1 + 28, 36);
+
+      html += `<g class="node-group">`;
+      html += `<rect class="node-hit" data-id="${n.id}" x="${hitX}" y="${hitY}" width="${hitW}" height="${hitH}" rx="6"/>`;
+
+      // Visible node line
+      const lineW = isCurrent ? 4 : 2.5;
+      html += `<path class="node-line" stroke="${lineColor}" stroke-width="${lineW}" d="M${n.x} ${lineY1} L${n.x} ${lineY2}"/>`;
+
+      // Difficulty dot at top (larger for leaf nodes)
+      const isLeaf = childCount === 0;
+      html += `<circle cx="${n.x}" cy="${lineY1}" r="${isLeaf ? 6 : 4}" fill="${lineColor}" opacity="0.9"/>`;
+
+      // Current node indicator (small blue bar above dot)
+      if (isCurrent) {
+        html += `<rect x="${n.x - 12}" y="${lineY1 - 10}" width="24" height="4" rx="2" fill="${CUR_COLOR}"/>`;
+      }
+
+      // Label text
+      html += `<text class="node-text" data-id="${n.id}" x="${n.x + 8}" y="${lineY1 - 5}" fill="${isDark ? '#cbd5e1' : '#334155'}">${label}</text>`;
+
+      // Child count badge
+      if (childCount > 0) {
+        html += `<circle cx="${n.x}" cy="${lineY2}" r="7" fill="${isDark ? '#374151' : '#e2e8f0'}" stroke="${lineColor}" stroke-width="1"/>`;
+        html += `<text class="badge-text" x="${n.x}" y="${lineY2}" text-anchor="middle" dominant-baseline="central" fill="${isDark ? '#94a3b8' : '#64748b'}">${childCount}</text>`;
+      }
+
+      html += `</g>`;
+    });
+
+    html += `</g>`;
+    svg.innerHTML = html;
+
+    // Auto-fit
+    const containerW = container.clientWidth;
+    const containerH = container.clientHeight;
+    const fitS = Math.min((containerW - 40) / Math.max(tl.layout.width, 100), (containerH - 40) / Math.max(tl.layout.height, 100), 1);
+    const initScale = Math.max(0.15, fitS);
+    viewRef.current = { x: (containerW - tl.layout.width * initScale) / 2, y: 30, scale: initScale };
+    applyView();
+  }, [nodes, currentNodeId, applyView]);
+
+  // ---- Re-render when ready ----
   useEffect(() => {
     if (!ready) return;
     renderTree();
   }, [ready, renderTree]);
 
+  // ---- Zoom / Pan event handlers ----
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg || !ready) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = svg.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const v = viewRef.current;
+      const delta = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+      const ns = Math.max(0.15, Math.min(4, v.scale * delta));
+      viewRef.current = {
+        x: mx - (mx - v.x) * (ns / v.scale),
+        y: my - (my - v.y) * (ns / v.scale),
+        scale: ns,
+      };
+      applyView();
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      dragRef.current = { sx: e.clientX, sy: e.clientY, vx: viewRef.current.x, vy: viewRef.current.y, moved: false };
+      svg.style.cursor = 'grabbing';
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragRef.current) return;
+      const dx = e.clientX - dragRef.current.sx;
+      const dy = e.clientY - dragRef.current.sy;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragRef.current.moved = true;
+      if (dragRef.current.moved) {
+        viewRef.current.x = dragRef.current.vx + dx;
+        viewRef.current.y = dragRef.current.vy + dy;
+        applyView();
+      }
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!dragRef.current) return;
+      const wasDrag = dragRef.current.moved;
+      const target = e.target as Element;
+      dragRef.current = null;
+      svg.style.cursor = 'default';
+
+      if (!wasDrag) {
+        // Click: find data-id on the target or a parent (skip virtual root)
+        const el = target.closest('[data-id]') as HTMLElement | null;
+        if (el) {
+          const id = el.getAttribute('data-id');
+          if (id && id !== '__cstree_root__') window.location.href = `/node/${id}`;
+        }
+      }
+    };
+
+    const handleMouseLeave = () => {
+      dragRef.current = null;
+      svg.style.cursor = 'default';
+    };
+
+    svg.addEventListener('wheel', handleWheel, { passive: false });
+    svg.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    svg.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      svg.removeEventListener('wheel', handleWheel);
+      svg.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      svg.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [ready, applyView]);
+
   return (
-    <div ref={containerRef} className="w-full h-full min-h-[400px] overflow-hidden">
+    <div ref={containerRef} className="w-full h-full min-h-[400px] relative overflow-hidden">
       {ready ? (
-        <svg ref={svgRef} className="w-full h-full block" style={{ overflow: 'visible' }} />
+        <>
+          <svg ref={svgRef} className="w-full h-full block" style={{ cursor: 'default', background: 'transparent' }} />
+
+          {/* ── Fixed legend (top-right, outside zoom/pan) ── */}
+          <div className="absolute top-3 right-3 flex flex-col gap-1.5 px-3 py-2 rounded-lg text-xs select-none pointer-events-none z-10
+            bg-white/85 dark:bg-gray-800/85 backdrop-blur-sm border border-black/10 dark:border-white/10">
+            {(['beginner', 'intermediate', 'advanced'] as const).map((level) => {
+              const c = DIFF_COLORS[level];
+              return (
+                <div key={level} className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <span style={{
+                    display: 'inline-block',
+                    width: 10, height: 10,
+                    borderRadius: '50%',
+                    backgroundColor: c,
+                    opacity: 0.85,
+                  }} />
+                  <span>{DIFF_LABELS[level]}</span>
+                </div>
+              );
+            })}
+          </div>
+        </>
       ) : (
         <div className="flex items-center justify-center h-full text-gray-400 text-sm">
           <span className="animate-pulse">🌳 加载知识树...</span>
