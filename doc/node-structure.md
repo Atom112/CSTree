@@ -9,7 +9,7 @@
 
 ```
 src/content/node/
-├── 00-hardware/        # 硬件方向（已有 11 个节点）
+├── 00-hardware/        # 硬件方向（已有 20 个节点）
 ├── 01-assembly/        # 汇编方向（待添加）
 ├── 02-os/              # 操作系统方向（待添加）
 ├── 03-compilers/       # 编译器方向（待添加）
@@ -53,18 +53,36 @@ binary-numbers (二进制数字) [beginner]
               ├── d-flipflop (D触发器) [intermediate]
               │     id: d-flipflop | order: 7 | parent: logic-gates
               │     prerequisites: sr-latch
-              └── register (寄存器) [intermediate]
-                    id: register | order: 8 | parent: logic-gates
-                    prerequisites: d-flipflop
+              ├── register (寄存器) [intermediate]
+              │     id: register | order: 8 | parent: logic-gates
+              │     prerequisites: d-flipflop
               ├── counter (计数器) [intermediate]
               │     id: counter | order: 9 | parent: logic-gates
               │     prerequisites: d-flipflop
               ├── ram (随机存取存储器) [intermediate]
               │     id: ram | order: 10 | parent: logic-gates
               │     prerequisites: register
-              └── alu (算术逻辑单元) [intermediate]
-                    id: alu | order: 11 | parent: logic-gates
-                    prerequisites: full-adder, logic-gates
+              ├── alu (算术逻辑单元) [intermediate]
+              │     id: alu | order: 11 | parent: logic-gates
+              │     prerequisites: full-adder, logic-gates
+              ├── decoder-encoder (译码器与编码器) [intermediate]
+              │     id: decoder-encoder | order: 12 | parent: logic-gates
+              │     prerequisites: and-gate, or-gate, not-gate
+              ├── multiplexer (多路选择器) [intermediate]
+              │     id: multiplexer | order: 13 | parent: logic-gates
+              │     prerequisites: and-gate, or-gate, not-gate
+              ├── finite-state-machine (有限状态机) [advanced]
+              │     id: finite-state-machine | order: 14 | parent: logic-gates
+              │     prerequisites: d-flipflop, decoder-encoder
+              ├── comparator (比较器) [intermediate]
+              │     id: comparator | order: 15 | parent: logic-gates
+              │     prerequisites: and-gate, or-gate, not-gate
+              ├── jk-t-flipflop (JK触发器与T触发器) [intermediate]
+              │     id: jk-t-flipflop | order: 16 | parent: logic-gates
+              │     prerequisites: sr-latch, d-flipflop
+              └── rom-flash (只读存储器与闪存) [intermediate]
+                    id: rom-flash | order: 17 | parent: logic-gates
+                    prerequisites: ram
 ```
 
 ### 01-assembly — 汇编方向
@@ -95,7 +113,7 @@ binary-numbers (二进制数字) [beginner]
 |---|-----|------|------|--------|----------|----------|
 | 1 | `binary-numbers` | 二进制数字 | beginner | — | 1 | — |
 | 2 | `boolean-algebra` | 布尔代数 | beginner | binary-numbers | 1 | binary-numbers |
-| 3 | `logic-gates` | 逻辑门 | beginner | boolean-algebra | 8 | boolean-algebra |
+| 3 | `logic-gates` | 逻辑门 | beginner | boolean-algebra | 17 | boolean-algebra |
 | 4 | `and-gate` | 与门 | beginner | logic-gates | 0 | logic-gates |
 | 5 | `or-gate` | 或门 | beginner | logic-gates | 0 | logic-gates |
 | 6 | `not-gate` | 非门 | beginner | logic-gates | 0 | logic-gates |
@@ -107,6 +125,12 @@ binary-numbers (二进制数字) [beginner]
 | 12 | `counter` | 计数器 | intermediate | logic-gates | 0 | d-flipflop |
 | 13 | `ram` | 随机存取存储器 | intermediate | logic-gates | 0 | register |
 | 14 | `alu` | 算术逻辑单元 | intermediate | logic-gates | 0 | full-adder, logic-gates |
+| 15 | `decoder-encoder` | 译码器与编码器 | intermediate | logic-gates | 0 | and-gate, or-gate, not-gate |
+| 16 | `multiplexer` | 多路选择器 | intermediate | logic-gates | 0 | and-gate, or-gate, not-gate |
+| 17 | `finite-state-machine` | 有限状态机 | advanced | logic-gates | 0 | d-flipflop, decoder-encoder |
+| 18 | `comparator` | 比较器 | intermediate | logic-gates | 0 | and-gate, or-gate, not-gate |
+| 19 | `jk-t-flipflop` | JK触发器与T触发器 | intermediate | logic-gates | 0 | sr-latch, d-flipflop |
+| 20 | `rom-flash` | 只读存储器与闪存 | intermediate | logic-gates | 0 | ram |
 
 ---
 
