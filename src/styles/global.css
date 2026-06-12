@@ -106,6 +106,18 @@
   }
 }
 
+/* ── Shiki dual-theme code blocks — honour .dark class ── */
+.dark .astro-code.github-dark {
+  background-color: var(--shiki-dark-bg) !important;
+  color: var(--shiki-dark) !important;
+}
+.dark .astro-code.github-dark span {
+  color: var(--shiki-dark) !important;
+}
+.dark .astro-code.github-dark span span {
+  color: var(--shiki-dark) !important;
+}
+
 @layer components {
   .knowledge-content h1 {
     @apply text-3xl font-bold mb-6 mt-8;
@@ -122,11 +134,47 @@
   .knowledge-content a:not(.nav-node-link):not(.no-kn-icon)::before {
     display: none; /* Only show 🔗 for data-knowledge-node links */
   }
-  .knowledge-content code {
+  /* Inline code only (not inside <pre> blocks) */
+  .knowledge-content :not(pre) > code {
     @apply bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono;
   }
+  /* Code block (pre) wrapper — bounding box with language badge */
   .knowledge-content pre {
-    @apply bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto mb-4;
+    @apply p-4 rounded-lg overflow-x-auto mb-4;
+  }
+  /* Code blocks with a language tag get a border + header bar */
+  .knowledge-content pre[data-language]:not([data-language="mermaid"]) {
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .dark .knowledge-content pre[data-language]:not([data-language="mermaid"]) {
+    border-color: rgba(255,255,255,0.08);
+  }
+  /* ── Code block header bar ── */
+  .knowledge-content pre[data-language]:not([data-language="mermaid"]) {
+    padding-top: 38px;
+  }
+  .knowledge-content pre[data-language]:not([data-language="mermaid"])::before {
+    content: attr(data-language);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 600;
+    text-transform: lowercase;
+    color: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.04);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px 8px 0 0;
+    line-height: 1.8;
+  }
+  .dark .knowledge-content pre[data-language]:not([data-language="mermaid"])::before {
+    color: rgba(255,255,255,0.45);
+    background: rgba(255,255,255,0.05);
+    border-bottom-color: rgba(255,255,255,0.06);
   }
   .knowledge-content ul {
     @apply list-disc pl-6 mb-4 space-y-1;

@@ -15,6 +15,12 @@ const { node } = Astro.props;
 const allNodes = await getCollection('node');
 const { Content } = await node.render();
 const data = node.data;
+const diffBadge = data.difficulty === 'beginner'
+  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+  : data.difficulty === 'intermediate'
+    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+    : 'bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300';
+const diffLabel = data.difficulty === 'beginner' ? '入门' : data.difficulty === 'intermediate' ? '进阶' : '高级';
 ---
 
 <BaseLayout
@@ -28,15 +34,7 @@ const data = node.data;
     <!-- Header -->
     <header class="mb-8">
       <div class="flex flex-wrap items-center gap-2 mb-2">
-        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
-          {data.difficulty === 'beginner'
-            ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-            : data.difficulty === 'intermediate'
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-              : 'bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300'
-          }">
-          {data.difficulty === 'beginner' ? '入门' : data.difficulty === 'intermediate' ? '进阶' : '高级'}
-        </span>
+        <span class={"text-xs px-2 py-0.5 rounded " + diffBadge}>{diffLabel}</span>
         {data.tags.map((tag) => (
           <span class="text-xs text-gray-400 dark:text-gray-500">#{tag}</span>
         ))}

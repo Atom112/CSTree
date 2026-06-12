@@ -35,10 +35,10 @@ export interface ResolvedGraph {
  * Convert Astro Collection entries to NodeData array.
  */
 export function fromCollection(
-  entries: Array<{ id: string; data: Omit<NodeData, 'id'> }>
+  entries: Array<{ id: string; data: { id: string; [key: string]: unknown } }>
 ): NodeData[] {
   return entries.map((entry) => ({
     ...entry.data,
-    id: entry.id,
+    id: entry.data.id,
   }));
 }

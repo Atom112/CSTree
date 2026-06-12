@@ -18,6 +18,12 @@ export default defineConfig({
   markdown: {
     remarkPlugins: [remarkWikiLink],
     rehypePlugins: [rehypeKnowledgeNode],
+    shikiConfig: {
+      themes: {
+        light: 'github-light',
+        dark: 'github-dark',
+      },
+    },
   },
 
   build: {

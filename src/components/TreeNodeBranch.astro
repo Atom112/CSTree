@@ -26,6 +26,7 @@ if (!node) return;
 
 const children = getChildren(nodeId);
 const indent = depth * 20;
+const Self = Astro.self;
 
 const difficultyColors: Record<string, string> = {
   beginner: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
@@ -63,7 +64,7 @@ const difficultyLabels: Record<string, string> = {
   {children.length > 0 && (
     <div class="border-l-2 border-gray-200 dark:border-gray-700 ml-2 pl-2 mt-1 mb-1">
       {children.map((child) => (
-        <TreeNodeBranch
+        <Self
           nodeId={child.id}
           nodeMap={nodeMap}
           getChildren={getChildren}
