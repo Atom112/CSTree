@@ -25,18 +25,18 @@
 | 8 | 全加器（Full Adder） | intermediate | ✅ 已完成 |
 | 15 | 译码器 / 编码器（Decoder / Encoder） | intermediate | ✅ 已完成 |
 | 16 | 多路选择器（Multiplexer / MUX） | intermediate | ✅ 已完成 |
-| — | 比较器（Comparator） | intermediate | ⬜ 待添加 |
+| 18 | 比较器（Comparator） | intermediate | ✅ 已完成 |
 | **时序逻辑** | | | |
 | 9 | SR 锁存器（SR Latch） | intermediate | ✅ 已完成 |
 | 10 | D 触发器（D Flip-Flop） | intermediate | ✅ 已完成 |
-| — | JK 触发器 / T 触发器 | intermediate | ⬜ 待添加 |
+| 19 | JK 触发器 / T 触发器 | intermediate | ✅ 已完成 |
 | 11 | 寄存器（Register） | intermediate | ✅ 已完成 |
 | 12 | 计数器（Counter） | intermediate | ✅ 已完成 |
 | 17 | 状态机（Finite State Machine） | advanced | ✅ 已完成 |
 | **存储与运算** | | | |
 | 13 | RAM（随机存取存储器） | intermediate | ✅ 已完成 |
 | 14 | ALU（算术逻辑单元） | intermediate | ✅ 已完成 |
-| — | ROM / Flash / 非易失存储 | intermediate | ⬜ 待添加 |
+| 20 | ROM / Flash / 非易失存储 | intermediate | ✅ 已完成 |
 | — | 缓存（Cache Memory） | advanced | ⬜ 待添加 |
 | **处理器架构** | | | |
 | — | CPU 数据通路（Datapath） | advanced | ⬜ 待添加 |

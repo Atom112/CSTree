@@ -20,6 +20,9 @@ children:
   - decoder-encoder
   - multiplexer
   - finite-state-machine
+  - comparator
+  - jk-t-flipflop
+  - rom-flash
 related: []
 prerequisites:
   - boolean-algebra
