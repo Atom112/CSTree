@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NodeNavigation from '../../components/NodeNavigation.astro';
+import SelectionSearch from '../../components/SelectionSearch.astro';
 import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -55,4 +56,6 @@ const diffLabel = data.difficulty === 'beginner' ? '入门' : data.difficulty ==
       allNodes={allNodes.map((n) => n.data)}
     />
   </article>
+
+  <SelectionSearch />
 </BaseLayout>

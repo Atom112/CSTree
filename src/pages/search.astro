@@ -4,6 +4,9 @@ import { getCollection } from 'astro:content';
 
 const nodes = await getCollection('node');
 const tags = [...new Set(nodes.flatMap((n) => n.data.tags))].sort();
+const tagCounts = Object.fromEntries(
+  tags.map((t) => [t, nodes.filter((n) => n.data.tags.includes(t)).length])
+);
 ---
 
 <BaseLayout title="搜索">
@@ -13,25 +16,43 @@ const tags = [...new Set(nodes.flatMap((n) => n.data.tags))].sort();
       搜索 {nodes.length} 个知识节点 · {tags.length} 个标签
     </p>
 
-    <!-- Pagefind search container (initially empty; JS populates it) -->
-    <div id="search" class="pagefind-ui-container mb-8"></div>
+    <!-- ── Search bar ── -->
+    <div id="cstree-search" class="mb-2">
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          id="s-input"
+          type="text"
+          placeholder="搜索知识点…"
+          autofocus
+          class="w-full h-11 pl-10 pr-10 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm outline-none transition-shadow shadow-sm focus:shadow-md focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30"
+        />
+        <button id="s-clear" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hidden transition-colors" aria-label="清除">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
 
-    <!-- Tag index -->
-    <section class="mt-12">
+    <!-- ── Results ── -->
+    <div id="s-stats" class="text-sm text-gray-400 mt-1 mb-1 hidden" role="status"></div>
+    <div id="s-results" class="min-h-[120px]" role="list"></div>
+
+    <!-- ── Tag index ── -->
+    <section id="s-tags" class="mt-12">
       <h2 class="text-xl font-bold mb-4 flex items-center gap-1.5">
         <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>
         <span>标签索引</span>
       </h2>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2" id="s-tag-list">
         {tags.map((tag) => (
           <button
             class="tag-btn px-3 py-1.5 rounded-full text-sm bg-gray-100 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
             data-tag={tag}
           >
             #{tag}
-            <span class="text-xs text-gray-400 ml-1">
-              ({nodes.filter((n) => n.data.tags.includes(tag)).length})
-            </span>
+            <span class="text-xs text-gray-400 ml-1">({tagCounts[tag]})</span>
           </button>
         ))}
       </div>
@@ -40,253 +61,231 @@ const tags = [...new Set(nodes.flatMap((n) => n.data.tags))].sort();
 </BaseLayout>
 
 <script is:inline>
-  (function () {
-    var searchContainer = document.getElementById('search');
-    if (!searchContainer) return;
+(function () {
+  'use strict';
 
-    function loadCSS(href) {
-      var link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = href;
-      document.head.appendChild(link);
+  /* ── DOM refs ── */
+  var input = document.getElementById('s-input');
+  var clearBtn = document.getElementById('s-clear');
+  var statsEl = document.getElementById('s-stats');
+  var resultsEl = document.getElementById('s-results');
+  var tagsSection = document.getElementById('s-tags');
+
+  /* ── State ── */
+  var nodeIndex = null;
+  var debounceId = null;
+  var cachedQuery = '';
+
+  /* ── Load node index ── */
+  async function loadIndex() {
+    if (nodeIndex) return nodeIndex;
+    try {
+      var resp = await fetch('/node-index.json');
+      // Guard: ensure it's an array
+      var data = await resp.json();
+      nodeIndex = Array.isArray(data) ? data : [];
+      return nodeIndex;
+    } catch (_) {
+      resultsEl.innerHTML =
+        '<div class="text-center py-16 text-red-400 text-sm">搜索索引加载失败，请刷新重试</div>';
+      return [];
     }
+  }
 
-    function loadScript(src) {
-      return new Promise(function (resolve, reject) {
-        var s = document.createElement('script');
-        s.src = src;
-        s.onload = resolve;
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
+  /* ── HTML escape ── */
+  function esc(str) {
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
 
-    function initPagefind() {
-      if (typeof window.PagefindUI === 'undefined') {
-        searchContainer.innerHTML =
-          '<p class="text-gray-400 text-sm">搜索索引不可用 — 请运行 <code>npm run build</code> 生成索引</p>';
-        return;
-      }
+  /* ── Search: substring match on title & summary ── */
+  function searchNodes(nodes, query) {
+    var q = query.toLowerCase().trim();
+    if (!q) return [];
 
-      try {
-        new window.PagefindUI({
-          element: '#search',
-          showSubResults: true,
-          showImages: false,
-          resetStyles: false,
-          autofocus: true,
-          translations: {
-            placeholder: '搜索知识点...',
-            clear_search: '清除',
-            load_more: '加载更多结果',
-            search_label: '搜索此站点',
-            zero_results: '未找到匹配结果',
-            many_results: '找到 [COUNT] 个结果',
-            one_result: '找到 1 个结果',
-          },
+    var hits = [];
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if (n.title.toLowerCase().indexOf(q) >= 0 || n.summary.toLowerCase().indexOf(q) >= 0) {
+        hits.push({
+          url: '/node/' + n.id + '/',
+          title: n.title,
+          summary: n.summary,
         });
-      } catch (e) {
-        console.warn('PagefindUI init error:', e);
-        searchContainer.innerHTML =
-          '<p class="text-gray-400 text-sm">搜索索引不可用</p>';
-        return;
-      }
-
-      // Auto-search for ?tag=xxx query param
-      var params = new URLSearchParams(window.location.search);
-      var tagQuery = params.get('tag');
-      if (tagQuery) {
-        var input = searchContainer.querySelector('input');
-        if (input) {
-          input.value = tagQuery;
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        }
       }
     }
 
-    // Load Pagefind UI assets asynchronously
-    loadCSS('/_pagefind/pagefind-ui.css');
-    loadScript('/_pagefind/pagefind-ui.js')
-      .then(function () {
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initPagefind);
-        } else {
-          initPagefind();
-        }
-      })
-      .catch(function () {
-        searchContainer.innerHTML =
-          '<p class="text-gray-400 text-sm">搜索索引不可用 — 请运行 <code>npm run build</code> 生成索引</p>';
-      });
+    // Title matches first
+    hits.sort(function (a, b) {
+      var aT = a.title.toLowerCase().indexOf(q) >= 0 ? 0 : 1;
+      var bT = b.title.toLowerCase().indexOf(q) >= 0 ? 0 : 1;
+      return aT - bT;
+    });
+
+    return hits;
+  }
+
+  /* ── Render results ── */
+  function renderResults(results, query) {
+    var q = query.toLowerCase().trim();
+
+    /* No query → hide everything */
+    if (!q) {
+      resultsEl.innerHTML = '';
+      statsEl.classList.add('hidden');
+      clearBtn.classList.add('hidden');
+      if (tagsSection) tagsSection.classList.remove('hidden');
+      return;
+    }
+
+    clearBtn.classList.remove('hidden');
+    if (tagsSection) tagsSection.classList.add('hidden');
+
+    /* Empty results */
+    if (results.length === 0) {
+      statsEl.textContent = '未找到匹配结果';
+      statsEl.classList.remove('hidden');
+      resultsEl.innerHTML =
+        '<div class="text-center py-16 text-gray-400 text-sm">试试其他关键词？</div>';
+      return;
+    }
+
+    statsEl.textContent = '找到 ' + results.length + ' 个结果' +
+      (results.length >= 50 ? '（显示前 50 个）' : '');
+    statsEl.classList.remove('hidden');
+
+    var html = '';
+    var maxShown = Math.min(results.length, 50);
+    for (var i = 0; i < maxShown; i++) {
+      var r = results[i];
+
+      // Highlight query in summary
+      var excerpt = r.summary;
+      var exIdx = r.summary.toLowerCase().indexOf(q);
+      if (exIdx >= 0) {
+        excerpt = esc(r.summary.substring(0, exIdx)) +
+          '<mark>' + esc(r.summary.substring(exIdx, exIdx + q.length)) + '</mark>' +
+          esc(r.summary.substring(exIdx + q.length));
+      } else {
+        excerpt = esc(r.summary);
+      }
+
+      html +=
+        '<a href="' + r.url + '" class="s-result block px-4 py-3 rounded-xl transition-colors no-underline" role="listitem">' +
+          '<div class="s-result-title text-base font-semibold mb-0.5">' + esc(r.title) + '</div>' +
+          '<div class="s-result-excerpt text-sm leading-relaxed">' + excerpt + '</div>' +
+        '</a>';
+    }
+    resultsEl.innerHTML = html;
+  }
+
+  /* ── Search handler ── */
+  async function doSearch(query) {
+    if (query === cachedQuery && nodeIndex) return;
+    cachedQuery = query;
+    var idx = await loadIndex();
+    var results = searchNodes(idx, query);
+    renderResults(results, query);
+  }
+
+  /* ── Input with debounce ── */
+  input.addEventListener('input', function () {
+    var query = this.value;
+    if (debounceId) clearTimeout(debounceId);
+    debounceId = setTimeout(function () { doSearch(query); }, 120);
+  });
+
+  /* ── Clear button ── */
+  clearBtn.addEventListener('click', function () {
+    input.value = '';
+    input.focus();
+    cachedQuery = '';
+    if (debounceId) clearTimeout(debounceId);
+    renderResults([], '');
+  });
+
+  /* ── ?tag= query param ── */
+  (function () {
+    var m = window.location.search.match(/[?&]tag=([^&]*)/);
+    if (m) {
+      var tagVal = decodeURIComponent(m[1].replace(/\+/g, ' '));
+      if (tagVal) {
+        input.value = tagVal;
+        doSearch(tagVal);
+      }
+    }
   })();
 
-  // Tag button click → trigger search
+  /* ── Tag button click → search that tag ── */
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('.tag-btn');
     if (!btn) return;
     var tag = btn.dataset.tag;
     if (!tag) return;
+    input.value = tag;
+    if (debounceId) clearTimeout(debounceId);
+    doSearch(tag);
+    input.focus();
+  });
 
-    var input = document.querySelector('#search input');
-    if (input) {
-      input.value = tag;
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.focus();
+  /* ── Keyboard: Escape to clear ── */
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      clearBtn.click();
     }
   });
+})();
 </script>
 
 <style is:global>
-  /* ===== Pagefind UI overrides (global — elements are created by JS, no scope attr) ===== */
+/* ===== Custom search result styles ===== */
 
-  .pagefind-ui-container { @apply w-full; }
+.s-result {
+  border-bottom: 1px solid #f1f5f9;
+}
+.dark .s-result {
+  border-bottom-color: #1e293b;
+}
+.s-result:last-child {
+  border-bottom: none;
+}
+.s-result:hover {
+  background: #f8fafc;
+}
+.dark .s-result:hover {
+  background: #0f172a;
+}
 
-  /* --- Search input --- */
-  .pagefind-ui__search-input {
-    @apply h-10 rounded-lg text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
-    padding: 0 2.5rem 0 2.75rem !important;
-    outline: none !important;
-    box-shadow: none !important;
-  }
-  .pagefind-ui__search-input,
-  .pagefind-ui__search-input:focus,
-  .pagefind-ui__search-input:active {
-    background: #fff !important;
-    color: #111827 !important;
-  }
-  :root.dark .pagefind-ui__search-input,
-  :root.dark .pagefind-ui__search-input:focus,
-  :root.dark .pagefind-ui__search-input:active {
-    background: #1f2937 !important;
-    color: #f3f4f6 !important;
-    border-color: #4b5563 !important;
-  }
-  .pagefind-ui__search-input:focus {
-    border-color: #60a5fa !important;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
-  }
+.s-result-title a,
+.s-result-title {
+  color: #2563eb;
+}
+.dark .s-result-title a,
+.dark .s-result-title {
+  color: #60a5fa;
+}
 
-  /* --- Search form wrap --- */
-  .pagefind-ui__form {
-    @apply relative;
-  }
+.s-result-excerpt {
+  color: #64748b;
+}
+.dark .s-result-excerpt {
+  color: #94a3b8;
+}
 
-  /* --- Clear button (hidden) --- */
-  .pagefind-ui__search-clear {
-    display: none !important;
-  }
+.s-result-excerpt mark {
+  background: #fef08a;
+  padding: 0 1px;
+  border-radius: 1px;
+  color: inherit;
+}
+.dark .s-result-excerpt mark {
+  background: rgba(113, 63, 18, 0.5);
+  color: #fbbf24;
+}
 
-  /* --- Results area --- */
-  .pagefind-ui__results-area {
-    @apply mt-4;
-  }
-
-  /* --- Result item (separator line style) --- */
-  .pagefind-ui__result {
-    @apply py-3;
-    border: none !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    border-radius: 0 !important;
-  }
-  :root.dark .pagefind-ui__result {
-    border-bottom-color: #374151 !important;
-  }
-  .pagefind-ui__result:last-child {
-    border-bottom: none !important;
-  }
-
-  /* --- Result title --- */
-  .pagefind-ui__result-title {
-    font-size: 1.25rem !important; /* text-xl */
-    font-weight: 700 !important;    /* bold */
-  }
-  .pagefind-ui__result-title a {
-    @apply no-underline hover:underline;
-    color: #2563eb !important;
-    font-size: inherit !important;
-  }
-  :root.dark .pagefind-ui__result-title a {
-    color: #60a5fa !important;
-  }
-  .pagefind-ui__result-nested .pagefind-ui__result-title {
-    font-size: 0.9375rem !important; /* = text-base, clearly smaller than main title */
-    font-weight: 600 !important;
-  }
-
-  /* --- Result excerpt --- */
-  .pagefind-ui__result-excerpt {
-    @apply text-sm mt-1 leading-relaxed rounded-sm px-0.5;
-    color: #4b5563 !important;
-  }
-  :root.dark .pagefind-ui__result-excerpt {
-    color: #9ca3af !important;
-  }
-  .pagefind-ui__result-excerpt mark {
-    @apply text-inherit;
-    background: #fef08a !important;
-  }
-  :root.dark .pagefind-ui__result-excerpt mark {
-    background: rgba(113, 63, 18, 0.5) !important;
-  }
-
-  /* --- Result title link (inside .pagefind-ui__result-title) --- */
-  .pagefind-ui__result-link {
-    @apply text-gray-400 dark:text-gray-500 mt-0.5;
-  }
-
-  /* --- Result thumbnail --- */
-  .pagefind-ui__result-thumb {
-    @apply rounded-md overflow-hidden;
-  }
-
-  /* --- Nested results (sub results) --- */
-  .pagefind-ui__result-nested .pagefind-ui__result {
-    @apply border-0 bg-gray-50 dark:bg-gray-900/30 mb-0;
-  }
-
-  /* --- Message (status) --- */
-  .pagefind-ui__message {
-    @apply text-sm text-gray-500 dark:text-gray-400 mb-3;
-  }
-
-  /* --- Loading skeleton --- */
-  .pagefind-ui__loading {
-    @apply text-sm text-gray-400 dark:text-gray-500;
-  }
-
-  /* --- Filter panel --- */
-  .pagefind-ui__filter-panel {
-    @apply bg-gray-50 dark:bg-gray-900 rounded-lg p-3 mb-4;
-  }
-  .pagefind-ui__filter-label {
-    @apply text-sm font-medium text-gray-700 dark:text-gray-300;
-  }
-  .pagefind-ui__filter-value {
-    @apply text-sm text-gray-600 dark:text-gray-400;
-  }
-  .pagefind-ui__filter-checkbox {
-    @apply accent-blue-500;
-  }
-
-  /* --- Result tags --- */
-  .pagefind-ui__result-tag {
-    @apply text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400;
-  }
-
-  /* --- Hidden / suppressed --- */
-  .pagefind-ui__hidden { display: none; }
-  .pagefind-ui__suppressed { opacity: 0.5; }
-
-  /* --- Drawer (load more) --- */
-  .pagefind-ui__drawer {
-    @apply mt-2;
-  }
-
-  /* --- Button (load more) --- */
-  .pagefind-ui__button {
-    @apply w-full py-2 px-4 text-sm font-medium rounded-lg border border-gray-200 dark:border-gray-700;
-    @apply text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800;
-    @apply hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors;
-    cursor: pointer;
-  }
+/* ── Tag buttons ── */
+.tag-btn {
+  cursor: pointer;
+}
 </style>
