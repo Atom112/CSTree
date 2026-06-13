@@ -1,10 +1,11 @@
 ---
-// SelectionSearch — 选中文本后的搜索弹窗
+// SelectionSearch — 选中文本后的浮动工具栏
 // 仅在知识节点内容页生效 (.knowledge-content 区域内)
+// 提供：复制、搜索网络、知识库搜索 三个操作
 ---
 
 <style is:global>
-  /* ── Selection popup ("在本知识库中搜索" button) ── */
+  /* ── Selection toolbar ── */
   .sel-popup {
     position: fixed;
     z-index: 9999;
@@ -12,17 +13,12 @@
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    padding: 8px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #1e293b;
-    cursor: pointer;
+    padding: 4px;
     display: none;
     pointer-events: auto;
-    white-space: nowrap;
     user-select: none;
-    align-items: center;
-    gap: 6px;
+    align-items: stretch;
+    gap: 0;
     transition: opacity 0.15s, transform 0.15s;
     opacity: 0;
     transform: translateY(4px);
@@ -32,18 +28,44 @@
     opacity: 1;
     transform: translateY(0);
   }
-  .sel-popup:hover { background: #f1f5f9; }
-  .sel-popup:active { transform: translateY(1px); }
   .dark .sel-popup {
     background: #1e293b;
     border-color: #334155;
-    color: #e2e8f0;
     box-shadow: 0 4px 16px rgba(0,0,0,0.5);
   }
-  .dark .sel-popup:hover { background: #334155; }
-  .sel-popup-svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-  /* ── Floating results panel ── */
+  /* ── Toolbar button ── */
+  .sel-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #1e293b;
+    transition: background 0.12s;
+    white-space: nowrap;
+  }
+  .sel-btn:hover { background: #f1f5f9; }
+  .sel-btn:active { transform: scale(0.96); }
+  .dark .sel-btn { color: #e2e8f0; }
+  .dark .sel-btn:hover { background: #334155; }
+  .sel-btn-svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .sel-btn-label { font-size: 12px; font-weight: 500; line-height: 1; }
+  .sel-btn-svg-check { display: none; }
+  .sel-btn.copied .sel-btn-svg-default { display: none; }
+  .sel-btn.copied .sel-btn-svg-check { display: block; }
+
+  /* ── Separator ── */
+  .sel-sep {
+    width: 1px;
+    margin: 6px 2px;
+    background: #e2e8f0;
+    flex-shrink: 0;
+  }
+  .dark .sel-sep { background: #334155; }
+
+  /* ── Floating results panel (unchanged) ── */
   .sel-results {
     position: fixed;
     z-index: 9998;
@@ -82,9 +104,7 @@
     border-radius: 12px 12px 0 0;
     z-index: 1;
   }
-  .dark .sel-results-header {
-    border-bottom-color: #334155;
-  }
+  .dark .sel-results-header { border-bottom-color: #334155; }
   .sel-results-title {
     font-size: 13px;
     font-weight: 600;
@@ -96,10 +116,7 @@
     flex: 1;
   }
   .dark .sel-results-title { color: #94a3b8; }
-  .sel-results-query {
-    color: #1e293b;
-    font-weight: 700;
-  }
+  .sel-results-query { color: #1e293b; font-weight: 700; }
   .dark .sel-results-query { color: #f1f5f9; }
   .sel-results-close {
     background: none;
@@ -114,7 +131,6 @@
   }
   .sel-results-close:hover { color: #475569; }
   .dark .sel-results-close:hover { color: #cbd5e1; }
-
   .sel-results-body { padding: 8px 12px 12px; }
 
   /* ── Mini search result card ── */
@@ -128,11 +144,7 @@
   .sel-result:hover { background: #f8fafc; }
   .dark .sel-result:hover { background: #0f172a; }
   .sel-result:last-child { margin-bottom: 0; }
-  .sel-result-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 2px;
-  }
+  .sel-result-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
   .sel-result-title a {
     color: #2563eb;
     text-decoration: none;
@@ -188,12 +200,7 @@
     color: #94a3b8;
     font-size: 13px;
   }
-  .sel-error {
-    text-align: center;
-    padding: 24px 16px;
-    color: #ef4444;
-    font-size: 13px;
-  }
+  .sel-error { text-align: center; padding: 24px 16px; color: #ef4444; font-size: 13px; }
   .sel-error-hint { margin-top: 6px; font-size: 12px; color: #94a3b8; }
   .sel-error-hint a { color: #2563eb; text-decoration: underline; }
   .dark .sel-error-hint a { color: #60a5fa; }
@@ -201,19 +208,55 @@
 
 <script>
 (function () {
+  'use strict';
+
   // ── Bail if not on a node page ──
   if (!document.querySelector('.knowledge-content')) return;
 
-  // ── Create popup (the "search" button bar) ──
+  /* ==================================================================
+     SVG icons (inlined to avoid external dependencies)
+     ================================================================== */
+  var ICONS = {
+    copy:
+      '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    check:
+      '<polyline points="20 6 9 17 4 12"/>',
+    globe:
+      '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    search:
+      '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  };
+
+  function svg(path, cls) {
+    return '<svg class="' + cls + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + path + '</svg>';
+  }
+
+  /* ==================================================================
+     Create toolbar popup
+     ================================================================== */
   var popup = document.createElement('div');
   popup.className = 'sel-popup';
   popup.innerHTML =
-    '<svg class="sel-popup-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-    '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>' +
-    '</svg>在本知识库中搜索';
+    '<div class="sel-btn" data-action="copy">' +
+      svg(ICONS.copy, 'sel-btn-svg sel-btn-svg-default') +
+      svg(ICONS.check, 'sel-btn-svg sel-btn-svg-check') +
+      '<span class="sel-btn-label">复制</span>' +
+    '</div>' +
+    '<div class="sel-sep"></div>' +
+    '<div class="sel-btn" data-action="websearch">' +
+      svg(ICONS.globe, 'sel-btn-svg') +
+      '<span class="sel-btn-label">搜索网络</span>' +
+    '</div>' +
+    '<div class="sel-sep"></div>' +
+    '<div class="sel-btn" data-action="kbsearch">' +
+      svg(ICONS.search, 'sel-btn-svg') +
+      '<span class="sel-btn-label">知识库搜索</span>' +
+    '</div>';
   document.body.appendChild(popup);
 
-  // ── Create floating results panel ──
+  /* ==================================================================
+     Create results panel (same as before)
+     ================================================================== */
   var panel = document.createElement('div');
   panel.className = 'sel-results';
   panel.innerHTML =
@@ -228,25 +271,30 @@
   var panelBody = panel.querySelector('.sel-results-body');
   var panelClose = panel.querySelector('.sel-results-close');
 
-  // ── State ──
+  /* ==================================================================
+     State
+     ================================================================== */
   var selectedText = '';
-  var selectionRect = null;   // last known selection bounding rect (viewport coords)
+  var selectionRect = null;
   var popupTimer = null;
+  var nodeIndex = null;
 
-  // ── Popup positioning (position: fixed — use viewport coords) ──
+  /* ==================================================================
+     Popup positioning
+     ================================================================== */
   function showPopup(rect) {
-    var popupH = 38;
+    var popupH = 42;
     var gap = 8;
 
-    // Above selection, or below if near top of viewport
     var top = rect.top - popupH - gap;
     if (top < gap) {
       top = rect.bottom + gap;
     }
 
-    // Center horizontally over the selection
-    var left = rect.left + (rect.width / 2) - 85;
-    left = Math.max(gap, Math.min(left, window.innerWidth - 180));
+    // Estimate popup width ~280px, center over selection
+    var popupW = 280;
+    var left = rect.left + (rect.width / 2) - (popupW / 2);
+    left = Math.max(gap, Math.min(left, window.innerWidth - popupW - gap));
 
     popup.style.left = left + 'px';
     popup.style.top = top + 'px';
@@ -257,17 +305,17 @@
     popup.classList.remove('visible');
   }
 
-  // ── Panel positioning (near the selection rect) ──
+  /* ==================================================================
+     Panel positioning
+     ================================================================== */
   function showPanel(rect) {
     var panelW = 420;
     var panelH = Math.min(480, window.innerHeight * 0.6);
     var gap = 10;
 
-    // Horizontal: center over the selection, clamped
     var left = rect.left + (rect.width / 2) - (panelW / 2);
     left = Math.max(8, Math.min(left, window.innerWidth - panelW - 8));
 
-    // Vertical: prefer below selection, then above, then centered
     var below = rect.bottom + gap;
     var above = rect.top - panelH - gap;
     var top;
@@ -276,7 +324,6 @@
     } else if (above >= 0) {
       top = above;
     } else {
-      // Center vertically
       top = Math.max(8, (window.innerHeight - panelH) / 2);
     }
 
@@ -290,14 +337,62 @@
     panelBody.innerHTML = '';
   }
 
+  /* ==================================================================
+     Actions
+     ================================================================== */
+
+  // ── Copy to clipboard ──
+  function doCopy(text, btn) {
+    if (!text) return;
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+      .catch(function () {
+        // Fallback for older browsers
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      });
+    // Flash "copied" feedback
+    btn.classList.add('copied');
+    setTimeout(function () { btn.classList.remove('copied'); }, 1200);
+    hidePopup();
+  }
+
+  // ── Search web ──
+  function doWebSearch(text) {
+    if (!text) return;
+    var url = 'https://www.google.com/search?q=' + encodeURIComponent(text);
+    window.open(url, '_blank', 'noopener');
+    hidePopup();
+  }
+
+  // ── Search knowledge base ──
+  async function doKBSearch(text, rect) {
+    if (!text || !rect) return;
+    hidePopup();
+    panelBody.innerHTML = '<div class="sel-loading">正在搜索</div>';
+    panelQuery.textContent = text;
+    showPanel(rect);
+
+    var idx = await loadNodeIndex();
+    var results = searchNodes(idx, text);
+    renderResults(results, text);
+  }
+
+  /* ==================================================================
+     Event handlers
+     ================================================================== */
+
   // ── Selection detection ──
   document.addEventListener('mouseup', function (e) {
     if (popupTimer) clearTimeout(popupTimer);
 
-    // Don't trigger if clicking in popup or panel
     if (popup.contains(e.target) || panel.contains(e.target)) return;
 
-    // If panel is visible and click is outside, hide it
     if (panel.classList.contains('visible') && !panel.contains(e.target)) {
       hidePanel();
     }
@@ -311,7 +406,6 @@
         return;
       }
 
-      // Only within .knowledge-content
       var node = sel.anchorNode;
       if (!node) { hidePopup(); return; }
       var el = node.nodeType === 3 ? node.parentElement : node;
@@ -333,7 +427,25 @@
     }, 20);
   });
 
-  // Hide selection popup on scroll (the results panel stays — user dismisses it via × or click-away)
+  // ── Toolbar button clicks ──
+  popup.addEventListener('click', function (e) {
+    var btn = e.target.closest('.sel-btn');
+    if (!btn) return;
+    var action = btn.dataset.action;
+    var text = selectedText;
+    var rect = selectionRect;
+    if (!text) return;
+
+    if (action === 'copy') {
+      doCopy(text, btn);
+    } else if (action === 'websearch') {
+      doWebSearch(text);
+    } else if (action === 'kbsearch') {
+      doKBSearch(text, rect);
+    }
+  });
+
+  // ── Hide selection popup on scroll (panel stays) ──
   document.addEventListener('scroll', function () {
     if (popup.classList.contains('visible')) hidePopup();
   }, true);
@@ -357,9 +469,16 @@
     }
   });
 
-  // ── Search using local node index (reliable for Chinese) ──
-  var nodeIndex = null;
+  // ── Intercept browser's default context menu when our toolbar is showing ──
+  document.addEventListener('contextmenu', function (e) {
+    if (popup.classList.contains('visible')) {
+      e.preventDefault();
+    }
+  }, true);
 
+  /* ==================================================================
+     Node index search (unchanged)
+     ================================================================== */
   async function loadNodeIndex() {
     if (nodeIndex) return nodeIndex;
     try {
@@ -383,7 +502,6 @@
     var html = '';
     for (var i = 0; i < results.length; i++) {
       var r = results[i];
-      // Highlight query in excerpt
       var excerpt = r.summary;
       var exIdx = r.summary.toLowerCase().indexOf(qLow);
       if (exIdx >= 0) {
@@ -406,7 +524,6 @@
     });
   }
 
-  // Simple substring search across node titles and summaries
   function searchNodes(nodes, query) {
     var q = query.toLowerCase();
     var hits = [];
@@ -420,7 +537,6 @@
         });
       }
     }
-    // Title matches first
     hits.sort(function (a, b) {
       var aT = a.title.toLowerCase().indexOf(q) >= 0 ? 0 : 1;
       var bT = b.title.toLowerCase().indexOf(q) >= 0 ? 0 : 1;
@@ -428,22 +544,6 @@
     });
     return hits;
   }
-
-  popup.addEventListener('click', async function () {
-    var query = selectedText;
-    var rect = selectionRect;
-    if (!query || !rect) return;
-    hidePopup();
-
-    panelBody.innerHTML = '<div class="sel-loading">正在搜索</div>';
-    panelQuery.textContent = query;
-    showPanel(rect);
-
-    // Load index and search locally (instant, reliable for Chinese)
-    var idx = await loadNodeIndex();
-    var results = searchNodes(idx, query);
-    renderResults(results, query);
-  });
 
   function esc(str) {
     var d = document.createElement('div');
