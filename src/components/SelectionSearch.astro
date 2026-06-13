@@ -1,18 +1,21 @@
 ---
 // SelectionSearch — 选中文本后的浮动工具栏
 // 仅在知识节点内容页生效 (.knowledge-content 区域内)
-// 提供：复制、搜索网络、知识库搜索 三个操作
+// 提供：复制、搜索网络、知识库搜索、问 AI 四个操作
+// AI 模式：默认免费 API (硅基流动)，离线降级 Transformers.js 浏览器模型
 ---
 
 <style is:global>
-  /* ── Selection toolbar ── */
+  /* ════════════════════════════════════════════════
+     Selection toolbar
+     ════════════════════════════════════════════════ */
   .sel-popup {
     position: fixed;
-    z-index: 9999;
+    z-index: 2147483646;
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.16);
     padding: 4px;
     display: none;
     pointer-events: auto;
@@ -23,18 +26,13 @@
     opacity: 0;
     transform: translateY(4px);
   }
-  .sel-popup.visible {
-    display: flex;
-    opacity: 1;
-    transform: translateY(0);
-  }
+  .sel-popup.visible { display: flex; opacity: 1; transform: translateY(0); }
   .dark .sel-popup {
     background: #1e293b;
     border-color: #334155;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   }
 
-  /* ── Toolbar button ── */
   .sel-btn {
     display: flex;
     align-items: center;
@@ -56,7 +54,12 @@
   .sel-btn.copied .sel-btn-svg-default { display: none; }
   .sel-btn.copied .sel-btn-svg-check { display: block; }
 
-  /* ── Separator ── */
+  /* ── AI button accent (subtle purple tint) ── */
+  .sel-btn[data-action="aiask"] { color: #7c3aed; }
+  .sel-btn[data-action="aiask"]:hover { background: #f5f3ff; }
+  .dark .sel-btn[data-action="aiask"] { color: #a78bfa; }
+  .dark .sel-btn[data-action="aiask"]:hover { background: #2e1065; }
+
   .sel-sep {
     width: 1px;
     margin: 6px 2px;
@@ -65,75 +68,87 @@
   }
   .dark .sel-sep { background: #334155; }
 
-  /* ── Floating results panel (unchanged) ── */
-  .sel-results {
+  /* ════════════════════════════════════════════════
+     Shared panel base
+     ════════════════════════════════════════════════ */
+  .sel-panel-base {
     position: fixed;
-    z-index: 9998;
+    z-index: 2147483645;
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.18);
     display: none;
     pointer-events: auto;
-    width: 420px;
+    width: 460px;
     max-width: calc(100vw - 32px);
-    max-height: min(480px, 60vh);
+    max-height: min(540px, 70vh);
     overflow-y: auto;
     animation: sel-pop-in 0.18s ease-out;
   }
-  .sel-results.visible { display: block; }
+  .sel-panel-base.visible { display: block; }
   @keyframes sel-pop-in {
     from { transform: translateY(8px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
   }
-  .dark .sel-results {
+  .dark .sel-panel-base {
     background: #1e293b;
     border-color: #334155;
     box-shadow: 0 8px 32px rgba(0,0,0,0.6);
   }
-  .sel-results-header {
+
+  .sel-panel-hd {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
-    padding: 14px 16px 10px;
+    padding: 12px 14px 10px;
     border-bottom: 1px solid #e2e8f0;
     position: sticky;
     top: 0;
     background: inherit;
     border-radius: 12px 12px 0 0;
-    z-index: 1;
+    z-index: 2;
   }
-  .dark .sel-results-header { border-bottom-color: #334155; }
-  .sel-results-title {
+  .dark .sel-panel-hd { border-bottom-color: #334155; }
+  .sel-panel-title {
     font-size: 13px;
     font-weight: 600;
     color: #475569;
-    line-height: 1.3;
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    flex: 1;
   }
-  .dark .sel-results-title { color: #94a3b8; }
-  .sel-results-query { color: #1e293b; font-weight: 700; }
-  .dark .sel-results-query { color: #f1f5f9; }
-  .sel-results-close {
+  .dark .sel-panel-title { color: #94a3b8; }
+  .sel-panel-query {
+    color: #1e293b;
+    font-weight: 700;
+  }
+  .dark .sel-panel-query { color: #f1f5f9; }
+
+  .sel-panel-hdbtn {
     background: none;
     border: none;
-    font-size: 18px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #94a3b8;
-    padding: 0 2px;
-    line-height: 1;
     flex-shrink: 0;
-    transition: color 0.15s;
+    transition: background 0.12s, color 0.12s;
   }
-  .sel-results-close:hover { color: #475569; }
-  .dark .sel-results-close:hover { color: #cbd5e1; }
-  .sel-results-body { padding: 8px 12px 12px; }
+  .sel-panel-hdbtn:hover { background: #f1f5f9; color: #475569; }
+  .dark .sel-panel-hdbtn:hover { background: #334155; color: #cbd5e1; }
+  .sel-panel-hdbtn svg { width: 16px; height: 16px; }
 
-  /* ── Mini search result card ── */
+  .sel-panel-bd { padding: 12px 16px 16px; }
+
+  /* ════════════════════════════════════════════════
+     KB search panel (reuses sel-panel-base)
+     ════════════════════════════════════════════════ */
   .sel-result {
     padding: 10px 12px;
     border-radius: 8px;
@@ -145,10 +160,7 @@
   .dark .sel-result:hover { background: #0f172a; }
   .sel-result:last-child { margin-bottom: 0; }
   .sel-result-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-  .sel-result-title a {
-    color: #2563eb;
-    text-decoration: none;
-  }
+  .sel-result-title a { color: #2563eb; text-decoration: none; }
   .sel-result-title a:hover { text-decoration: underline; }
   .dark .sel-result-title a { color: #60a5fa; }
   .sel-result-excerpt {
@@ -162,69 +174,228 @@
   }
   .dark .sel-result-excerpt { color: #94a3b8; }
   .sel-result-excerpt mark {
-    background: #fef08a;
-    padding: 0 1px;
-    border-radius: 1px;
+    background: #fef08a; padding: 0 1px; border-radius: 1px; color: inherit;
   }
   .dark .sel-result-excerpt mark {
-    background: rgba(113, 63, 18, 0.5);
-    color: #fbbf24;
+    background: rgba(113, 63, 18, 0.5); color: #fbbf24;
   }
 
   .sel-loading {
-    text-align: center;
-    padding: 32px 16px;
-    color: #94a3b8;
-    font-size: 13px;
+    text-align: center; padding: 32px 16px; color: #94a3b8; font-size: 13px;
   }
   .sel-loading::after {
     content: '';
     display: inline-block;
-    width: 16px;
-    height: 16px;
-    margin-left: 6px;
-    border: 2px solid #e2e8f0;
-    border-top-color: #3b82f6;
+    width: 16px; height: 16px; margin-left: 6px;
+    border: 2px solid #e2e8f0; border-top-color: #3b82f6;
     border-radius: 50%;
     animation: sel-spin 0.6s linear infinite;
     vertical-align: middle;
   }
   .dark .sel-loading::after {
-    border-color: #334155;
-    border-top-color: #60a5fa;
+    border-color: #334155; border-top-color: #60a5fa;
   }
   @keyframes sel-spin { to { transform: rotate(360deg); } }
-  .sel-empty {
-    text-align: center;
-    padding: 32px 16px;
-    color: #94a3b8;
-    font-size: 13px;
-  }
+
+  .sel-empty { text-align: center; padding: 32px 16px; color: #94a3b8; font-size: 13px; }
   .sel-error { text-align: center; padding: 24px 16px; color: #ef4444; font-size: 13px; }
   .sel-error-hint { margin-top: 6px; font-size: 12px; color: #94a3b8; }
   .sel-error-hint a { color: #2563eb; text-decoration: underline; }
   .dark .sel-error-hint a { color: #60a5fa; }
+
+  /* ════════════════════════════════════════════════
+     AI panel
+     ════════════════════════════════════════════════ */
+  .ai-hd-icon { color: #7c3aed; }
+  .dark .ai-hd-icon { color: #a78bfa; }
+
+  .ai-body {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #1e293b;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .dark .ai-body { color: #e2e8f0; }
+
+  .ai-body p { margin: 0 0 8px; }
+  .ai-body p:last-child { margin-bottom: 0; }
+  .ai-body strong { font-weight: 600; }
+  .ai-body em { font-style: italic; }
+  .ai-body code {
+    font-size: 12px; padding: 1px 4px; border-radius: 3px;
+    background: #f1f5f9; font-family: 'Menlo', 'Consolas', monospace;
+  }
+  .dark .ai-body code { background: #1e293b; }
+  .ai-body a { color: #2563eb; text-decoration: underline; }
+  .dark .ai-body a { color: #60a5fa; }
+
+  .ai-think {
+    color: #94a3b8;
+    font-style: italic;
+    font-size: 13px;
+  }
+  .ai-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: #7c3aed;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: ai-blink 0.8s step-end infinite;
+  }
+  .dark .ai-cursor { background: #a78bfa; }
+  .ai-cursor.done { display: none; }
+  @keyframes ai-blink { 50% { opacity: 0; } }
+
+  /* ── AI sources ── */
+  .ai-sources {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .dark .ai-sources { border-top-color: #334155; }
+  .ai-sources-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .ai-source-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #2563eb;
+    text-decoration: none;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #f1f5f9;
+    margin: 2px 4px 2px 0;
+    transition: background 0.12s;
+  }
+  .ai-source-link:hover { background: #dbeafe; }
+  .dark .ai-source-link { color: #60a5fa; background: #1e293b; }
+  .dark .ai-source-link:hover { background: #1e3a5f; }
+
+  /* ── AI progress (model download) ── */
+  .ai-progress-wrap { padding: 24px 16px; text-align: center; }
+  .ai-progress-label {
+    font-size: 13px; color: #64748b; margin-bottom: 10px;
+  }
+  .dark .ai-progress-label { color: #94a3b8; }
+  .ai-progress-bar {
+    width: 100%; height: 6px;
+    background: #e2e8f0; border-radius: 3px; overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .dark .ai-progress-bar { background: #334155; }
+  .ai-progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+  .ai-progress-info { font-size: 11px; color: #94a3b8; }
+
+  /* ── API key config ── */
+  .ai-config { padding: 20px 16px; }
+  .ai-config h3 {
+    font-size: 15px; font-weight: 600; margin: 0 0 4px; color: #1e293b;
+  }
+  .dark .ai-config h3 { color: #f1f5f9; }
+  .ai-config p {
+    font-size: 12px; color: #64748b; margin: 0 0 12px; line-height: 1.5;
+  }
+  .dark .ai-config p { color: #94a3b8; }
+  .ai-config-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Menlo', 'Consolas', monospace;
+    outline: none;
+    box-sizing: border-box;
+    background: #fff;
+    color: #1e293b;
+    transition: border-color 0.15s;
+  }
+  .ai-config-input:focus { border-color: #7c3aed; }
+  .dark .ai-config-input { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+  .dark .ai-config-input:focus { border-color: #a78bfa; }
+
+  .ai-config-row {
+    display: flex; gap: 8px; align-items: center; margin-top: 8px;
+  }
+  .ai-config-btn {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.12s;
+    white-space: nowrap;
+  }
+  .ai-config-btn-primary {
+    background: #7c3aed; color: #fff;
+  }
+  .ai-config-btn-primary:hover { background: #6d28d9; }
+  .ai-config-btn-secondary {
+    background: #f1f5f9; color: #475569;
+  }
+  .ai-config-btn-secondary:hover { background: #e2e8f0; }
+  .dark .ai-config-btn-secondary { background: #334155; color: #cbd5e1; }
+  .dark .ai-config-btn-secondary:hover { background: #475569; }
+
+  .ai-config-status {
+    font-size: 12px; color: #22c55e; margin-top: 8px;
+  }
+  .ai-config-error {
+    font-size: 12px; color: #ef4444; margin-top: 8px;
+  }
+  .ai-config-hint {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #475569;
+  }
+  .dark .ai-config-hint { background: #0f172a; color: #94a3b8; }
+  .ai-config-hint code {
+    font-size: 11px; padding: 1px 4px; border-radius: 3px;
+    background: #e2e8f0; word-break: break-all;
+  }
+  .dark .ai-config-hint code { background: #1e293b; }
+  .ai-config-hint a { color: #2563eb; }
+  .dark .ai-config-hint a { color: #60a5fa; }
 </style>
 
 <script>
 (function () {
   'use strict';
 
-  // ── Bail if not on a node page ──
   if (!document.querySelector('.knowledge-content')) return;
 
   /* ==================================================================
-     SVG icons (inlined to avoid external dependencies)
+     SVG icon snippets
      ================================================================== */
   var ICONS = {
-    copy:
-      '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
-    check:
-      '<polyline points="20 6 9 17 4 12"/>',
-    globe:
-      '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
-    search:
-      '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+    copy:     '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    check:    '<polyline points="20 6 9 17 4 12"/>',
+    globe:    '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    search:   '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+    sparkle:  '<path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5z"/><circle cx="19" cy="5" r="1.5" opacity="0.6"/><circle cx="5" cy="19" r="1.5" opacity="0.6"/>',
+    gear:     '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    refresh:  '<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>',
+    close:    '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    bulb:     '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>',
+    book:     '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
   };
 
   function svg(path, cls) {
@@ -251,25 +422,38 @@
     '<div class="sel-btn" data-action="kbsearch">' +
       svg(ICONS.search, 'sel-btn-svg') +
       '<span class="sel-btn-label">知识库搜索</span>' +
+    '</div>' +
+    '<div class="sel-sep"></div>' +
+    '<div class="sel-btn" data-action="aiask">' +
+      svg(ICONS.sparkle, 'sel-btn-svg') +
+      '<span class="sel-btn-label">问AI</span>' +
     '</div>';
   document.body.appendChild(popup);
 
   /* ==================================================================
-     Create results panel (same as before)
+     Create shared panel element (reused for KB search & AI)
      ================================================================== */
   var panel = document.createElement('div');
-  panel.className = 'sel-results';
+  panel.className = 'sel-panel-base';
   panel.innerHTML =
-    '<div class="sel-results-header">' +
-    '  <div class="sel-results-title">在知识库中搜索 <span class="sel-results-query"></span></div>' +
-    '  <button class="sel-results-close">&times;</button>' +
+    '<div class="sel-panel-hd">' +
+    '  <div class="sel-panel-title"></div>' +
+    '  <button class="sel-panel-hdbtn sel-panel-refresh" title="重新回答">' +
+        svg(ICONS.refresh, '') +
+    '  </button>' +
+    '  <button class="sel-panel-hdbtn sel-panel-config" title="AI 设置">' +
+        svg(ICONS.gear, '') +
+    '  </button>' +
+    '  <button class="sel-panel-hdbtn sel-panel-close" title="关闭">&times;</button>' +
     '</div>' +
-    '<div class="sel-results-body"></div>';
+    '<div class="sel-panel-bd"></div>';
   document.body.appendChild(panel);
 
-  var panelQuery = panel.querySelector('.sel-results-query');
-  var panelBody = panel.querySelector('.sel-results-body');
-  var panelClose = panel.querySelector('.sel-results-close');
+  var panelTitle  = panel.querySelector('.sel-panel-title');
+  var panelBody   = panel.querySelector('.sel-panel-bd');
+  var panelClose  = panel.querySelector('.sel-panel-close');
+  var panelConfig = panel.querySelector('.sel-panel-config');
+  var panelRefresh= panel.querySelector('.sel-panel-refresh');
 
   /* ==================================================================
      State
@@ -278,6 +462,22 @@
   var selectionRect = null;
   var popupTimer = null;
   var nodeIndex = null;
+  var activeMode = null;   // 'kb' | 'ai'
+  var aiAbortCtrl = null;  // AbortController for AI stream
+  var localModel = null;   // Transformers.js pipeline (lazy)
+
+  /* ------------------------------------------------------------------
+     API key management
+     ------------------------------------------------------------------ */
+  var AI_KEY = 'cstree_ai_api_key';
+  var AI_MODE = 'cstree_ai_mode';  // 'api' | 'local'
+
+  function getApiKey() { try { return localStorage.getItem(AI_KEY) || ''; } catch(_) { return ''; } }
+  function setApiKey(k) { try { localStorage.setItem(AI_KEY, k); } catch(_) {} }
+  function clearApiKey() { try { localStorage.removeItem(AI_KEY); } catch(_) {} }
+
+  function getAiMode() { return localStorage.getItem(AI_MODE) || 'api'; }
+  function setAiMode(m) { localStorage.setItem(AI_MODE, m); }
 
   /* ==================================================================
      Popup positioning
@@ -285,102 +485,448 @@
   function showPopup(rect) {
     var popupH = 42;
     var gap = 8;
-
     var top = rect.top - popupH - gap;
-    if (top < gap) {
-      top = rect.bottom + gap;
-    }
-
-    // Estimate popup width ~280px, center over selection
-    var popupW = 280;
+    if (top < gap) top = rect.bottom + gap;
+    var popupW = 360;
     var left = rect.left + (rect.width / 2) - (popupW / 2);
     left = Math.max(gap, Math.min(left, window.innerWidth - popupW - gap));
-
     popup.style.left = left + 'px';
     popup.style.top = top + 'px';
     popup.classList.add('visible');
   }
 
-  function hidePopup() {
-    popup.classList.remove('visible');
-  }
+  function hidePopup() { popup.classList.remove('visible'); }
 
   /* ==================================================================
-     Panel positioning
+     Panel positioning (shared between KB search & AI)
      ================================================================== */
   function showPanel(rect) {
-    var panelW = 420;
-    var panelH = Math.min(480, window.innerHeight * 0.6);
+    var panelW = 460;
+    var panelH = Math.min(540, window.innerHeight * 0.7);
     var gap = 10;
-
     var left = rect.left + (rect.width / 2) - (panelW / 2);
     left = Math.max(8, Math.min(left, window.innerWidth - panelW - 8));
-
     var below = rect.bottom + gap;
     var above = rect.top - panelH - gap;
     var top;
-    if (below + panelH <= window.innerHeight) {
-      top = below;
-    } else if (above >= 0) {
-      top = above;
-    } else {
-      top = Math.max(8, (window.innerHeight - panelH) / 2);
-    }
-
+    if (below + panelH <= window.innerHeight) top = below;
+    else if (above >= 0) top = above;
+    else top = Math.max(8, (window.innerHeight - panelH) / 2);
     panel.style.left = left + 'px';
     panel.style.top = top + 'px';
     panel.classList.add('visible');
   }
 
   function hidePanel() {
+    if (aiAbortCtrl) { aiAbortCtrl.abort(); aiAbortCtrl = null; }
     panel.classList.remove('visible');
     panelBody.innerHTML = '';
+    panelTitle.textContent = '';
+    panelRefresh.style.display = 'none';
+    panelConfig.style.display = 'none';
+    activeMode = null;
   }
 
   /* ==================================================================
-     Actions
+     Actions — existing
      ================================================================== */
-
-  // ── Copy to clipboard ──
   function doCopy(text, btn) {
     if (!text) return;
     (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
       .catch(function () {
-        // Fallback for older browsers
         var ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
+        ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
       });
-    // Flash "copied" feedback
     btn.classList.add('copied');
     setTimeout(function () { btn.classList.remove('copied'); }, 1200);
     hidePopup();
   }
 
-  // ── Search web ──
   function doWebSearch(text) {
     if (!text) return;
-    var url = 'https://www.google.com/search?q=' + encodeURIComponent(text);
-    window.open(url, '_blank', 'noopener');
+    window.open('https://www.google.com/search?q=' + encodeURIComponent(text), '_blank', 'noopener');
     hidePopup();
   }
 
-  // ── Search knowledge base ──
   async function doKBSearch(text, rect) {
     if (!text || !rect) return;
     hidePopup();
+    activeMode = 'kb';
+    panelRefresh.style.display = 'none';
+    panelConfig.style.display = 'none';
+    panelTitle.innerHTML = '在知识库中搜索 <span class="sel-panel-query">' + esc(text) + '</span>';
     panelBody.innerHTML = '<div class="sel-loading">正在搜索</div>';
-    panelQuery.textContent = text;
+    showPanel(rect);
+    var idx = await loadNodeIndex();
+    renderResults(searchNodes(idx, text));
+  }
+
+  /* ==================================================================
+     Actions — AI
+     ================================================================== */
+
+  // ── Main AI entry point ──
+  function doAskAI(text, rect, forceConfig) {
+    if (!text || !rect) return;
+    hidePopup();
+    activeMode = 'ai';
+    panelRefresh.style.display = 'none';
+    panelConfig.style.display = 'block';
+
+    var apiKey = getApiKey();
+    if (!apiKey || forceConfig) {
+      showAIConfig(text, rect);
+      return;
+    }
+
+    var mode = getAiMode();
+    if (mode === 'api') {
+      doAskAI_API(text, rect);
+    } else {
+      doAskAI_Local(text, rect);
+    }
+  }
+
+  // ── API mode ──
+  async function doAskAI_API(text, rect) {
+    panelRefresh.style.display = 'none';
+    panelTitle.innerHTML = '🤖 <span class="sel-panel-query">' + esc(text) + '</span>';
+    panelBody.innerHTML = '<div class="sel-loading">AI 思考中</div>';
     showPanel(rect);
 
-    var idx = await loadNodeIndex();
-    var results = searchNodes(idx, text);
-    renderResults(results, text);
+    var context = buildRAGContext(text);
+    var apiKey = getApiKey();
+    if (!apiKey) { showAIConfig(text, rect); return; }
+
+    var systemMsg = '你是一个计算机科学知识助手。请用中文回答。回答时可以参考以下知识库内容（如果相关）：\n\n' +
+      context +
+      '\n\n如果知识库内容不相关或不充分，请基于你自己的知识回答。回答应简洁明了，适合初学者理解。';
+
+    var body = JSON.stringify({
+      model: 'Qwen/Qwen2.5-7B-Instruct',
+      messages: [
+        { role: 'system', content: systemMsg },
+        { role: 'user', content: '请解释：' + text }
+      ],
+      stream: true,
+      temperature: 0.3,
+      max_tokens: 2048
+    });
+
+    aiAbortCtrl = new AbortController();
+
+    var resp;
+    try {
+      resp = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: body,
+        signal: aiAbortCtrl.signal
+      });
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      // Network error → fallback to local model
+      setAiMode('local');
+      doAskAI_Local(text, rect);
+      return;
+    }
+
+    if (!resp.ok) {
+      if (resp.status === 401 || resp.status === 403) {
+        // Auth error → show config
+        showAIConfig(text, rect, 'API Key 无效，请重新配置');
+        return;
+      }
+      // Other API error → fallback
+      setAiMode('local');
+      doAskAI_Local(text, rect);
+      return;
+    }
+
+    // ── Stream response ──
+    panelRefresh.style.display = 'none';
+    panelBody.innerHTML = '<div class="ai-body"><span class="ai-cursor"></span></div>';
+    var aiBodyEl = panelBody.querySelector('.ai-body');
+    var cursorEl = panelBody.querySelector('.ai-cursor');
+    var fullText = '';
+    var buffer = '';
+
+    var reader = resp.body.getReader();
+    var decoder = new TextDecoder();
+
+    try {
+      while (true) {
+        var readResult = await reader.read();
+        if (readResult.done) break;
+        buffer += decoder.decode(readResult.value, { stream: true });
+        // Parse SSE: "data: {...}\n\n"
+        var lines = buffer.split('\n');
+        buffer = lines.pop() || '';  // keep incomplete line
+        for (var li = 0; li < lines.length; li++) {
+          var line = lines[li].trim();
+          if (!line || line === 'data: [DONE]') continue;
+          if (line.indexOf('data: ') !== 0) continue;
+          try {
+            var json = JSON.parse(line.slice(6));
+            var delta = json.choices && json.choices[0] && json.choices[0].delta;
+            if (delta && delta.content) {
+              fullText += delta.content;
+              // Simple markdown rendering
+              aiBodyEl.innerHTML = renderMarkdown(fullText) + '<span class="ai-cursor"></span>';
+              aiBodyEl.scrollTop = aiBodyEl.scrollHeight;
+            }
+          } catch (_) {}
+        }
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+    }
+
+    // Done — remove cursor, show sources
+    cursorEl.classList.add('done');
+    showAISources(context);
+    panelRefresh.style.display = 'block';
+  }
+
+  // ── Local model mode (Transformers.js fallback) ──
+  async function doAskAI_Local(text, rect) {
+    panelRefresh.style.display = 'none';
+    panelTitle.innerHTML = '🤖 <span class="sel-panel-query">' + esc(text) + '</span> (离线)';
+
+    var context = buildRAGContext(text);
+
+    // Show progress initially
+    panelBody.innerHTML =
+      '<div class="ai-progress-wrap">' +
+      '  <div class="ai-progress-label">正在加载 AI 模型</div>' +
+      '  <div class="ai-progress-bar"><div class="ai-progress-fill"></div></div>' +
+      '  <div class="ai-progress-info">首次加载需下载约 350MB 模型文件</div>' +
+      '</div>';
+    showPanel(rect);
+
+    try {
+      // Dynamic import of Transformers.js from CDN
+      var HF = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/dist/transformers.min.js');
+      var progressFill = panelBody.querySelector('.ai-progress-fill');
+      var progressInfo = panelBody.querySelector('.ai-progress-info');
+
+      var generator = await HF.pipeline('text-generation',
+        'onnx-community/Qwen2.5-0.5B-Instruct',
+        {
+          dtype: 'q4',
+          device: navigator.gpu ? 'webgpu' : 'wasm',
+          progress_callback: function (p) {
+            if (progressFill && p.status === 'progress') {
+              var pct = Math.round((p.loaded / p.total) * 100);
+              progressFill.style.width = pct + '%';
+              if (progressInfo) {
+                progressInfo.textContent = '下载中 ' + pct + '% · ' +
+                  formatSize(p.loaded) + ' / ' + formatSize(p.total);
+              }
+            }
+          }
+        }
+      );
+
+      localModel = generator;
+
+      // Generate
+      panelBody.innerHTML = '<div class="ai-body"><span class="ai-cursor"></span></div>';
+      var aiBodyEl = panelBody.querySelector('.ai-body');
+      var cursorEl = panelBody.querySelector('.ai-cursor');
+
+      var prompt = '你是一个计算机科学知识助手。用中文简洁回答。\n\n相关知识：\n' +
+        context + '\n\n问题：' + text;
+
+      var output = await generator(prompt, {
+        max_new_tokens: 512,
+        temperature: 0.3,
+        do_sample: false
+      });
+
+      var answer = output[0].generated_text;
+      // Strip the prompt from the generated text
+      if (answer.indexOf(prompt) === 0) {
+        answer = answer.slice(prompt.length).trim();
+      }
+
+      aiBodyEl.innerHTML = renderMarkdown(answer);
+      cursorEl.classList.add('done');
+      showAISources(context);
+      panelRefresh.style.display = 'block';
+
+    } catch (err) {
+      panelBody.innerHTML =
+        '<div class="sel-error">离线模型加载失败</div>' +
+        '<div class="sel-error-hint" style="text-align:center">' +
+        '请检查网络连接后重试，或 <a href="#" class="ai-retry-api">切换为 API 模式</a></div>';
+      panelBody.querySelector('.ai-retry-api').addEventListener('click', function (e) {
+        e.preventDefault();
+        setAiMode('api');
+        doAskAI_API(text, rect);
+      });
+    }
+  }
+
+  // ── Show AI configuration overlay ──
+  function showAIConfig(text, rect, errorMsg) {
+    panelRefresh.style.display = 'none';
+    panelConfig.style.display = 'none';
+    panelTitle.textContent = '🤖 AI 设置';
+    var apiKey = getApiKey();
+
+    var statusHtml = apiKey
+      ? '<div class="ai-config-status">✅ API Key 已配置</div>'
+      : '<div class="ai-config-error" style="color:#94a3b8">⚠️ 尚未配置 API Key</div>';
+
+    var errorHtml = errorMsg
+      ? '<div class="ai-config-error">' + esc(errorMsg) + '</div>'
+      : '';
+
+    panelBody.innerHTML =
+      '<div class="ai-config">' +
+      '  <h3>配置 AI 助手</h3>' +
+      '  <p>输入你的 API Key 以使用在线 AI 服务<br>（9B 以下模型永久免费）</p>' +
+      '  <input class="ai-config-input" id="ai-key-input" type="password" ' +
+            'placeholder="sk-..." value="' + esc(apiKey || '') + '" />' +
+      errorHtml +
+      '  <div class="ai-config-row">' +
+      '    <button class="ai-config-btn ai-config-btn-primary" id="ai-key-save">保存</button>' +
+      '    <button class="ai-config-btn ai-config-btn-secondary" id="ai-key-clear">清除</button>' +
+      '    <span style="flex:1"></span>' +
+      '    <button class="ai-config-btn ai-config-btn-secondary" id="ai-local-fallback">离线模式</button>' +
+      '  </div>' +
+      statusHtml +
+      '  <div class="ai-config-hint">' +
+      '    <strong>📌 如何获取 API Key？</strong><br>' +
+      '    1. 访问 <a href="https://cloud.siliconflow.cn" target="_blank">cloud.siliconflow.cn</a> 注册账号<br>' +
+      '    2. 进入「API 密钥」页面 → 创建 API Key<br>' +
+      '    3. 复制密钥并粘贴到上方输入框<br>' +
+      '    4. 点击「保存」<br><br>' +
+      '    💡 使用 Qwen2.5-7B-Instruct 模型，永久免费<br>' +
+      '    🔒 API Key 仅存储在本地浏览器中' +
+      '  </div>' +
+      '</div>';
+
+    showPanel(rect);
+
+    var input = document.getElementById('ai-key-input');
+    var saveBtn = document.getElementById('ai-key-save');
+    var clearBtn = document.getElementById('ai-key-clear');
+    var localBtn = document.getElementById('ai-local-fallback');
+
+    saveBtn.addEventListener('click', function () {
+      var val = input.value.trim();
+      if (!val) { return; }
+      setApiKey(val);
+      setAiMode('api');
+      doAskAI(text, rect);
+    });
+
+    clearBtn.addEventListener('click', function () {
+      clearApiKey();
+      input.value = '';
+      panelBody.querySelector('.ai-config-status') &&
+        (panelBody.querySelector('.ai-config-status').textContent = '已清除');
+    });
+
+    localBtn.addEventListener('click', function () {
+      setAiMode('local');
+      doAskAI(text, rect);
+    });
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') saveBtn.click();
+    });
+    input.focus();
+  }
+
+  /* ==================================================================
+     RAG — build context from node-index.json
+     ================================================================== */
+  function buildRAGContext(text) {
+    if (!nodeIndex) return '';
+    var hits = searchNodes(nodeIndex, text);
+    if (hits.length === 0) return '';
+    return hits.slice(0, 4).map(function (n) {
+      return '【' + n.title + '】' + n.summary;
+    }).join('\n\n');
+  }
+
+  /* ==================================================================
+     Simple markdown renderer (safe, basic)
+     ================================================================== */
+  function renderMarkdown(text) {
+    var html = esc(text);
+    // Code blocks (```...```)
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
+      return '<pre><code>' + esc(code.trim()) + '</code></pre>';
+    });
+    // Inline code (`...`)
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Bold (**...**)
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Italic (*...*)
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // Links [text](url)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Line breaks → paragraphs
+    html = '<p>' + html.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
+    return html;
+  }
+
+  /* ==================================================================
+     AI sources display
+     ================================================================== */
+  function showAISources(context) {
+    if (!context) return;
+    var sources = context.split('\n\n').filter(function (s) { return s.trim(); });
+    if (sources.length === 0) return;
+
+    var titleMatch, sourceLinks = [];
+    for (var i = 0; i < sources.length; i++) {
+      titleMatch = sources[i].match(/^【(.+?)】/);
+      if (titleMatch) {
+        sourceLinks.push(titleMatch[1]);
+      }
+    }
+    if (sourceLinks.length === 0) return;
+
+    // Find actual node data for link URLs
+    var hits = [];
+    for (var j = 0; j < sourceLinks.length; j++) {
+      for (var k = 0; k < (nodeIndex || []).length; k++) {
+        if (nodeIndex[k].title === sourceLinks[j]) {
+          hits.push(nodeIndex[k]);
+          break;
+        }
+      }
+    }
+
+    var html = '<div class="ai-sources">' +
+      '<div class="ai-sources-title">📖 参考来源</div>';
+    for (var h = 0; h < hits.length; h++) {
+      html += '<a class="ai-source-link" href="/node/' + hits[h].id + '/" target="_blank">' +
+        svg(ICONS.book, '') + ' ' + esc(hits[h].title) + '</a>';
+    }
+    html += '</div>';
+
+    var bd = panel.querySelector('.sel-panel-bd');
+    bd.insertAdjacentHTML('beforeend', html);
+  }
+
+  /* ==================================================================
+     Utility: format file size
+     ================================================================== */
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + 'B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
   }
 
   /* ==================================================================
@@ -390,30 +936,18 @@
   // ── Selection detection ──
   document.addEventListener('mouseup', function (e) {
     if (popupTimer) clearTimeout(popupTimer);
-
     if (popup.contains(e.target) || panel.contains(e.target)) return;
-
     if (panel.classList.contains('visible') && !panel.contains(e.target)) {
       hidePanel();
     }
-
     popupTimer = setTimeout(function () {
       var sel = window.getSelection();
       var text = (sel && sel.toString().trim()) || '';
-
-      if (text.length === 0 || text.length > 300) {
-        hidePopup();
-        return;
-      }
-
+      if (text.length === 0 || text.length > 300) { hidePopup(); return; }
       var node = sel.anchorNode;
       if (!node) { hidePopup(); return; }
       var el = node.nodeType === 3 ? node.parentElement : node;
-      if (!el || !el.closest('.knowledge-content')) {
-        hidePopup();
-        return;
-      }
-
+      if (!el || !el.closest('.knowledge-content')) { hidePopup(); return; }
       try {
         var range = sel.getRangeAt(0);
         var rect = range.getBoundingClientRect();
@@ -421,9 +955,7 @@
         selectionRect = rect;
         selectedText = text;
         showPopup(rect);
-      } catch (_) {
-        hidePopup();
-      }
+      } catch (_) { hidePopup(); }
     }, 20);
   });
 
@@ -442,10 +974,12 @@
       doWebSearch(text);
     } else if (action === 'kbsearch') {
       doKBSearch(text, rect);
+    } else if (action === 'aiask') {
+      doAskAI(text, rect);
     }
   });
 
-  // ── Hide selection popup on scroll (panel stays) ──
+  // ── Scroll / mousedown / keydown ──
   document.addEventListener('scroll', function () {
     if (popup.classList.contains('visible')) hidePopup();
   }, true);
@@ -459,8 +993,20 @@
     }
   });
 
-  // ── Panel close ──
   panelClose.addEventListener('click', hidePanel);
+
+  panelConfig.addEventListener('click', function () {
+    if (activeMode === 'ai') {
+      var text = selectedText || panelTitle.textContent.replace(/^.*?/, '');
+      showAIConfig(text, { left: parseInt(panel.style.left) || 0, top: parseInt(panel.style.top) || 0 });
+    }
+  });
+
+  panelRefresh.addEventListener('click', function () {
+    if (activeMode === 'ai' && selectedText && selectionRect) {
+      doAskAI(selectedText, selectionRect);
+    }
+  });
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
@@ -469,15 +1015,12 @@
     }
   });
 
-  // ── Intercept browser's default context menu when our toolbar is showing ──
   document.addEventListener('contextmenu', function (e) {
-    if (popup.classList.contains('visible')) {
-      e.preventDefault();
-    }
+    if (popup.classList.contains('visible')) e.preventDefault();
   }, true);
 
   /* ==================================================================
-     Node index search (unchanged)
+     Node index utilities
      ================================================================== */
   async function loadNodeIndex() {
     if (nodeIndex) return nodeIndex;
@@ -485,43 +1028,7 @@
       var resp = await fetch('/node-index.json');
       nodeIndex = await resp.json();
       return nodeIndex;
-    } catch (_) {
-      return [];
-    }
-  }
-
-  function renderResults(results, query) {
-    if (!results || results.length === 0) {
-      panelBody.innerHTML =
-        '<div class="sel-empty">未找到匹配结果</div>' +
-        '<div class="sel-error-hint" style="text-align:center">' +
-        '前往 <a href="/search?tag=' + encodeURIComponent(query) + '">搜索页</a> 查看更多</div>';
-      return;
-    }
-    var qLow = query.toLowerCase();
-    var html = '';
-    for (var i = 0; i < results.length; i++) {
-      var r = results[i];
-      var excerpt = r.summary;
-      var exIdx = r.summary.toLowerCase().indexOf(qLow);
-      if (exIdx >= 0) {
-        excerpt = esc(r.summary.substring(0, exIdx)) +
-          '<mark>' + esc(r.summary.substring(exIdx, exIdx + query.length)) + '</mark>' +
-          esc(r.summary.substring(exIdx + query.length));
-      } else {
-        excerpt = esc(r.summary);
-      }
-      html += '<div class="sel-result" data-href="' + r.url + '">' +
-        '<div class="sel-result-title"><a href="' + r.url + '">' + esc(r.title) + '</a></div>' +
-        '<div class="sel-result-excerpt">' + excerpt + '</div>' +
-        '</div>';
-    }
-    panelBody.innerHTML = html;
-    panelBody.querySelectorAll('.sel-result').forEach(function (card) {
-      card.addEventListener('click', function () {
-        window.location.href = card.dataset.href;
-      });
-    });
+    } catch (_) { return []; }
   }
 
   function searchNodes(nodes, query) {
@@ -530,11 +1037,7 @@
     for (var i = 0; i < nodes.length; i++) {
       var n = nodes[i];
       if (n.title.toLowerCase().indexOf(q) >= 0 || n.summary.toLowerCase().indexOf(q) >= 0) {
-        hits.push({
-          url: '/node/' + n.id + '/',
-          title: n.title,
-          summary: n.summary,
-        });
+        hits.push(n);
       }
     }
     hits.sort(function (a, b) {
@@ -545,7 +1048,30 @@
     return hits;
   }
 
+  function renderResults(results) {
+    if (!results || results.length === 0) {
+      panelBody.innerHTML =
+        '<div class="sel-empty">未找到匹配结果</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < results.length; i++) {
+      var r = results[i];
+      html += '<div class="sel-result" data-href="/node/' + r.id + '/">' +
+        '<div class="sel-result-title"><a href="/node/' + r.id + '/">' + esc(r.title) + '</a></div>' +
+        '<div class="sel-result-excerpt">' + esc(r.summary) + '</div>' +
+        '</div>';
+    }
+    panelBody.innerHTML = html;
+    panelBody.querySelectorAll('.sel-result').forEach(function (card) {
+      card.addEventListener('click', function () {
+        window.location.href = card.dataset.href;
+      });
+    });
+  }
+
   function esc(str) {
+    if (!str) return '';
     var d = document.createElement('div');
     d.textContent = str;
     return d.innerHTML;
