@@ -468,16 +468,34 @@
 
   /* ------------------------------------------------------------------
      API key management
+     ─ Built-in key comes from build-time env var PUBLIC_SILICONFLOW_API_KEY
+       (set in Cloudflare Pages dashboard or .env file)
+     ─ Users can still override with their own key via the settings panel
      ------------------------------------------------------------------ */
   var AI_KEY = 'cstree_ai_api_key';
   var AI_MODE = 'cstree_ai_mode';  // 'api' | 'local'
 
-  function getApiKey() { try { return localStorage.getItem(AI_KEY) || ''; } catch(_) { return ''; } }
+  // Build-time injected API key (set by site owner via Cloudflare Pages env vars)
+  var BUILTIN_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PUBLIC_SILICONFLOW_API_KEY) || '';
+
+  function getApiKey() {
+    // localStorage override takes priority (user can manually enter a different key)
+    try {
+      var stored = localStorage.getItem(AI_KEY);
+      if (stored) return stored;
+    } catch(_) {}
+    return BUILTIN_KEY;
+  }
   function setApiKey(k) { try { localStorage.setItem(AI_KEY, k); } catch(_) {} }
   function clearApiKey() { try { localStorage.removeItem(AI_KEY); } catch(_) {} }
+  function hasApiKey() { return !!getApiKey(); }
 
-  function getAiMode() { return localStorage.getItem(AI_MODE) || 'api'; }
-  function setAiMode(m) { localStorage.setItem(AI_MODE, m); }
+  function getAiMode() {
+    // If built-in key exists, default to API mode
+    if (BUILTIN_KEY) return 'api';
+    try { return localStorage.getItem(AI_MODE) || 'api'; } catch(_) { return 'api'; }
+  }
+  function setAiMode(m) { try { localStorage.setItem(AI_MODE, m); } catch(_) {} }
 
   /* ==================================================================
      Popup positioning
@@ -779,21 +797,35 @@
     panelConfig.style.display = 'none';
     panelTitle.textContent = '🤖 AI 设置';
     var apiKey = getApiKey();
+    var hasBuiltin = !!BUILTIN_KEY;
 
-    var statusHtml = apiKey
-      ? '<div class="ai-config-status">✅ API Key 已配置</div>'
-      : '<div class="ai-config-error" style="color:#94a3b8">⚠️ 尚未配置 API Key</div>';
+    var statusHtml;
+    if (apiKey && hasBuiltin) {
+      statusHtml = '<div class="ai-config-status">✅ AI 服务已就绪（站长预配置）</div>';
+    } else if (apiKey) {
+      statusHtml = '<div class="ai-config-status">✅ API Key 已配置</div>';
+    } else {
+      statusHtml = '<div class="ai-config-error" style="color:#94a3b8">⚠️ 尚未配置 API Key</div>';
+    }
 
     var errorHtml = errorMsg
       ? '<div class="ai-config-error">' + esc(errorMsg) + '</div>'
       : '';
 
+    var inputVal = esc(apiKey || '');
+    // Don't show the built-in key in the input field (hide it for security)
+    if (hasBuiltin && apiKey === BUILTIN_KEY) { inputVal = ''; }
+
+    var descriptionHtml = hasBuiltin
+      ? '<p>AI 服务已由站长预配置，可直接使用。<br>你也可以在此输入自己的 API Key 来覆盖默认设置。</p>'
+      : '<p>输入你的 API Key 以使用在线 AI 服务<br>（9B 以下模型永久免费）</p>';
+
     panelBody.innerHTML =
       '<div class="ai-config">' +
       '  <h3>配置 AI 助手</h3>' +
-      '  <p>输入你的 API Key 以使用在线 AI 服务<br>（9B 以下模型永久免费）</p>' +
+      descriptionHtml +
       '  <input class="ai-config-input" id="ai-key-input" type="password" ' +
-            'placeholder="sk-..." value="' + esc(apiKey || '') + '" />' +
+            'placeholder="sk-..." value="' + inputVal + '" />' +
       errorHtml +
       '  <div class="ai-config-row">' +
       '    <button class="ai-config-btn ai-config-btn-primary" id="ai-key-save">保存</button>' +
@@ -803,7 +835,7 @@
       '  </div>' +
       statusHtml +
       '  <div class="ai-config-hint">' +
-      '    <strong>📌 如何获取 API Key？</strong><br>' +
+      '    <strong>📌 ' + (hasBuiltin ? '使用自己的 API Key（可选）' : '如何获取 API Key？') + '</strong><br>' +
       '    1. 访问 <a href="https://cloud.siliconflow.cn" target="_blank">cloud.siliconflow.cn</a> 注册账号<br>' +
       '    2. 进入「API 密钥」页面 → 创建 API Key<br>' +
       '    3. 复制密钥并粘贴到上方输入框<br>' +
