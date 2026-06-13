@@ -147,6 +147,26 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
   .dark .sel-panel-hdbtn:hover { background: #334155; color: #cbd5e1; }
   .sel-panel-hdbtn svg { width: 16px; height: 16px; }
 
+  /* ── Model selector in panel header ── */
+  .sel-model-sel {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    border: 1px solid #e2e8f0;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    outline: none;
+    font-family: inherit;
+    flex-shrink: 0;
+    max-width: 110px;
+  }
+  .sel-model-sel:hover { border-color: #cbd5e1; }
+  .dark .sel-model-sel { border-color: #334155; color: #94a3b8; }
+  .dark .sel-model-sel:hover { border-color: #475569; }
+  .sel-model-sel option { background: #fff; color: #1e293b; }
+  .dark .sel-model-sel option { background: #1e293b; color: #e2e8f0; }
+
   .sel-panel-bd { padding: 12px 16px 16px; }
 
   /* ════════════════════════════════════════════════
@@ -475,9 +495,11 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
     '  <button class="sel-panel-hdbtn sel-panel-refresh" title="重新回答">' +
         svg(ICONS.refresh, '') +
     '  </button>' +
-    '  <button class="sel-panel-hdbtn sel-panel-config" title="AI 设置">' +
-        svg(ICONS.gear, '') +
-    '  </button>' +
+    '  <select class="sel-model-sel" id="sel-model-sel" title="切换模型">' +
+    '    <option value="Qwen/Qwen3-8B">Qwen3-8B</option>' +
+    '    <option value="THUDM/GLM-Z1-9B-0414">GLM Z1-9B</option>' +
+    '    <option value="deepseek-ai/DeepSeek-R1-0528-Qwen3-8B">DeepSeek R1-8B</option>' +
+    '  </select>' +
     '  <button class="sel-panel-hdbtn sel-panel-close" title="关闭">&times;</button>' +
     '</div>' +
     '<div class="sel-panel-bd"></div>';
@@ -486,8 +508,8 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
   var panelTitle  = panel.querySelector('.sel-panel-title');
   var panelBody   = panel.querySelector('.sel-panel-bd');
   var panelClose  = panel.querySelector('.sel-panel-close');
-  var panelConfig = panel.querySelector('.sel-panel-config');
   var panelRefresh= panel.querySelector('.sel-panel-refresh');
+  var panelModel  = panel.querySelector('#sel-model-sel');
 
   /* ==================================================================
      State
@@ -520,39 +542,11 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
   }
   function setSelectedModel(id) { try { localStorage.setItem(AI_MODEL_KEY, id); } catch(_) {} }
 
-  /* ------------------------------------------------------------------
-     API key management
-     ─ Built-in key comes from build-time env var PUBLIC_SILICONFLOW_API_KEY
-       (set in Cloudflare Pages dashboard or .env file)
-     ─ Users can still override with their own key via the settings panel
-     ------------------------------------------------------------------ */
-  var AI_KEY = 'cstree_ai_api_key';
-  var AI_MODE = 'cstree_ai_mode';  // 'api' | 'local'
-
   // Build-time injected API key — read from hidden element rendered by Astro frontmatter
   var BUILTIN_KEY = (function () {
     var el = document.getElementById('cstree-ai-config');
     return el ? (el.getAttribute('data-api-key') || '') : '';
   })();
-
-  function getApiKey() {
-    // localStorage override takes priority (user can manually enter a different key)
-    try {
-      var stored = localStorage.getItem(AI_KEY);
-      if (stored) return stored;
-    } catch(_) {}
-    return BUILTIN_KEY;
-  }
-  function setApiKey(k) { try { localStorage.setItem(AI_KEY, k); } catch(_) {} }
-  function clearApiKey() { try { localStorage.removeItem(AI_KEY); } catch(_) {} }
-  function hasApiKey() { return !!getApiKey(); }
-
-  function getAiMode() {
-    // If built-in key exists, default to API mode
-    if (BUILTIN_KEY) return 'api';
-    try { return localStorage.getItem(AI_MODE) || 'api'; } catch(_) { return 'api'; }
-  }
-  function setAiMode(m) { try { localStorage.setItem(AI_MODE, m); } catch(_) {} }
 
   /* ==================================================================
      Popup positioning
@@ -598,7 +592,6 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
     panelBody.innerHTML = '';
     panelTitle.textContent = '';
     panelRefresh.style.display = 'none';
-    panelConfig.style.display = 'none';
     activeMode = null;
   }
 
@@ -643,25 +636,22 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
      ================================================================== */
 
   // ── Main AI entry point ──
-  function doAskAI(text, rect, forceConfig) {
+  function doAskAI(text, rect) {
     if (!text || !rect) return;
     hidePopup();
     activeMode = 'ai';
     panelRefresh.style.display = 'none';
-    panelConfig.style.display = 'block';
 
-    var apiKey = getApiKey();
-    if (!apiKey || forceConfig) {
-      showAIConfig(text, rect);
+    if (!BUILTIN_KEY) {
+      panelTitle.innerHTML = '🤖 AI 未配置';
+      panelBody.innerHTML =
+        '<div class="sel-error">站长尚未配置 AI API Key</div>' +
+        '<div class="sel-error-hint" style="text-align:center">请联系站长在 Cloudflare Pages 中设置 PUBLIC_SILICONFLOW_API_KEY</div>';
+      showPanel(rect);
       return;
     }
 
-    var mode = getAiMode();
-    if (mode === 'api') {
-      doAskAI_API(text, rect);
-    } else {
-      doAskAI_Local(text, rect);
-    }
+    doAskAI_API(text, rect);
   }
 
   // ── API mode ──
@@ -672,8 +662,6 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
     showPanel(rect);
 
     var context = buildRAGContext(text);
-    var apiKey = getApiKey();
-    if (!apiKey) { showAIConfig(text, rect); return; }
 
     var systemMsg = '你是一个计算机科学知识助手。请用中文回答。回答时可以参考以下知识库内容（如果相关）：\n\n' +
       context +
@@ -697,7 +685,7 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
       resp = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer ' + apiKey,
+          'Authorization': 'Bearer ' + BUILTIN_KEY,
           'Content-Type': 'application/json'
         },
         body: body,
@@ -706,19 +694,19 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
     } catch (err) {
       if (err.name === 'AbortError') return;
       // Network error → fallback to local model
-      setAiMode('local');
       doAskAI_Local(text, rect);
       return;
     }
 
     if (!resp.ok) {
       if (resp.status === 401 || resp.status === 403) {
-        // Auth error → show config
-        showAIConfig(text, rect, 'API Key 无效，请重新配置');
+        // Auth error → built-in key is invalid
+        panelBody.innerHTML =
+          '<div class="sel-error">API Key 无效</div>' +
+          '<div class="sel-error-hint" style="text-align:center">请检查 Cloudflare Pages 中 PUBLIC_SILICONFLOW_API_KEY 是否正确</div>';
         return;
       }
       // Other API error → fallback
-      setAiMode('local');
       doAskAI_Local(text, rect);
       return;
     }
@@ -839,135 +827,11 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
       panelBody.innerHTML =
         '<div class="sel-error">离线模型加载失败</div>' +
         '<div class="sel-error-hint" style="text-align:center">' +
-        '请检查网络连接后重试，或 <a href="#" class="ai-retry-api">切换为 API 模式</a></div>';
-      panelBody.querySelector('.ai-retry-api').addEventListener('click', function (e) {
-        e.preventDefault();
-        setAiMode('api');
-        doAskAI_API(text, rect);
-      });
+        '请检查网络连接后重试</div>';
     }
   }
 
   // ── Show AI configuration overlay ──
-  function showAIConfig(text, rect, errorMsg) {
-    panelRefresh.style.display = 'none';
-    panelConfig.style.display = 'none';
-    panelTitle.textContent = '🤖 AI 设置';
-    var apiKey = getApiKey();
-    var hasBuiltin = !!BUILTIN_KEY;
-
-    var statusHtml;
-    if (apiKey && hasBuiltin) {
-      statusHtml = '<div class="ai-config-status">✅ AI 服务已就绪（站长预配置）</div>';
-    } else if (apiKey) {
-      statusHtml = '<div class="ai-config-status">✅ API Key 已配置</div>';
-    } else {
-      statusHtml = '<div class="ai-config-error" style="color:#94a3b8">⚠️ 尚未配置 API Key</div>';
-    }
-
-    var errorHtml = errorMsg
-      ? '<div class="ai-config-error">' + esc(errorMsg) + '</div>'
-      : '';
-
-    var inputVal = esc(apiKey || '');
-    // Don't show the built-in key in the input field (hide it for security)
-    if (hasBuiltin && apiKey === BUILTIN_KEY) { inputVal = ''; }
-
-    var descriptionHtml = hasBuiltin
-      ? '<p>AI 服务已由站长预配置，可直接使用。<br>你也可以在此输入自己的 API Key 来覆盖默认设置。</p>'
-      : '<p>输入你的 API Key 以使用在线 AI 服务<br>（9B 以下模型永久免费）</p>';
-
-    var selectedModel = getSelectedModel();
-
-    // Build model selector HTML
-    var modelOptsHtml = '';
-    for (var mi = 0; mi < AI_MODELS.length; mi++) {
-      var m = AI_MODELS[mi];
-      var checked = m.id === selectedModel ? 'checked' : '';
-      modelOptsHtml +=
-        '<label class="ai-model-opt' + (checked ? ' active' : '') + '">' +
-        '  <input type="radio" name="ai-model" value="' + m.id + '" ' + checked + '>' +
-        '  <span class="ai-model-label">' + esc(m.label) + '</span>' +
-        '  <span class="ai-model-desc">' + esc(m.desc) + '</span>' +
-        '</label>';
-    }
-
-    panelBody.innerHTML =
-      '<div class="ai-config">' +
-      '  <h3>配置 AI 助手</h3>' +
-      descriptionHtml +
-      '  <input class="ai-config-input" id="ai-key-input" type="password" ' +
-            'placeholder="sk-..." value="' + inputVal + '" />' +
-      errorHtml +
-      '  <div class="ai-config-row">' +
-      '    <button class="ai-config-btn ai-config-btn-primary" id="ai-key-save">保存</button>' +
-      '    <button class="ai-config-btn ai-config-btn-secondary" id="ai-key-clear">清除</button>' +
-      '    <span style="flex:1"></span>' +
-      '    <button class="ai-config-btn ai-config-btn-secondary" id="ai-local-fallback">离线模式</button>' +
-      '  </div>' +
-      statusHtml +
-      '  <div class="ai-model-section">' +
-      '    <div class="ai-model-section-title">🧠 选择模型</div>' +
-      '    <div class="ai-model-opts" id="ai-model-opts">' + modelOptsHtml + '</div>' +
-      '  </div>' +
-      '  <div class="ai-config-hint">' +
-      '    <strong>📌 ' + (hasBuiltin ? '使用自己的 API Key（可选）' : '如何获取 API Key？') + '</strong><br>' +
-      '    1. 访问 <a href="https://cloud.siliconflow.cn" target="_blank">cloud.siliconflow.cn</a> 注册账号<br>' +
-      '    2. 进入「API 密钥」页面 → 创建 API Key<br>' +
-      '    3. 复制密钥并粘贴到上方输入框<br>' +
-      '    4. 点击「保存」<br><br>' +
-      '    💡 默认使用 Qwen3-8B 模型，9B 以下永久免费<br>' +
-      '    🔒 API Key 仅存储在本地浏览器中' +
-      '  </div>' +
-      '</div>';
-
-    showPanel(rect);
-
-    var input = document.getElementById('ai-key-input');
-    var saveBtn = document.getElementById('ai-key-save');
-    var clearBtn = document.getElementById('ai-key-clear');
-    var localBtn = document.getElementById('ai-local-fallback');
-
-    // Model selector: radio click → update active style + save selection
-    var modelOpts = document.getElementById('ai-model-opts');
-    if (modelOpts) {
-      modelOpts.addEventListener('change', function (e) {
-        if (e.target.name === 'ai-model') {
-          // Update active class
-          var labels = modelOpts.querySelectorAll('.ai-model-opt');
-          for (var li = 0; li < labels.length; li++) {
-            labels[li].classList.toggle('active', labels[li].querySelector('input').checked);
-          }
-          setSelectedModel(e.target.value);
-        }
-      });
-    }
-
-    saveBtn.addEventListener('click', function () {
-      var val = input.value.trim();
-      if (!val) { return; }
-      setApiKey(val);
-      setAiMode('api');
-      doAskAI(text, rect);
-    });
-
-    clearBtn.addEventListener('click', function () {
-      clearApiKey();
-      input.value = '';
-      panelBody.querySelector('.ai-config-status') &&
-        (panelBody.querySelector('.ai-config-status').textContent = '已清除');
-    });
-
-    localBtn.addEventListener('click', function () {
-      setAiMode('local');
-      doAskAI(text, rect);
-    });
-
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') saveBtn.click();
-    });
-    input.focus();
-  }
 
   /* ==================================================================
      RAG — build context from node-index.json
@@ -1134,17 +998,15 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
 
   panelClose.addEventListener('click', hidePanel);
 
-  panelConfig.addEventListener('click', function () {
-    if (activeMode === 'ai') {
-      var text = selectedText || panelTitle.textContent.replace(/^.*?/, '');
-      showAIConfig(text, { left: parseInt(panel.style.left) || 0, top: parseInt(panel.style.top) || 0 });
-    }
-  });
-
   panelRefresh.addEventListener('click', function () {
     if (activeMode === 'ai' && selectedText && selectionRect) {
       doAskAI(selectedText, selectionRect);
     }
+  });
+
+  // Model change → persist + refresh
+  panelModel.addEventListener('change', function () {
+    setSelectedModel(this.value);
   });
 
   document.addEventListener('keydown', function (e) {
