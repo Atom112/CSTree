@@ -287,6 +287,7 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
   .dark .ai-think-summary:hover { background: #334155; }
   .ai-think-wrap[open] .ai-think-summary { border-bottom: 1px solid #e2e8f0; }
   .dark .ai-think-wrap[open] .ai-think-summary { border-bottom-color: #334155; }
+  .ai-reasoning { margin-bottom: 8px; }
   .ai-cursor {
     display: inline-block;
     width: 2px;
@@ -692,14 +693,15 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
 
     var context = buildRAGContext(text);
 
-    var systemMsg = '你是一个计算机科学知识助手。请用中文回答。回答时可以参考以下知识库内容（如果相关）：\n\n' +
-      context +
-      '\n\n如果知识库内容不相关或不充分，请基于你自己的知识回答。回答应简洁明了，适合初学者理解。';
+    var systemMsg = '你是一个计算机科学知识助手。用中文简要解释用户选中的内容即可，适合初学者理解。用最少的篇幅讲清核心概念，无需展开细节。';
+
+    var ragSuffix = context ? '\n\n以下知识库内容可供参考（如果相关）：\n' + context : '';
+    var fullSystemMsg = systemMsg + ragSuffix;
 
     var body = JSON.stringify({
       model: getSelectedModel(),
       messages: [
-        { role: 'system', content: systemMsg },
+        { role: 'system', content: fullSystemMsg },
         { role: 'user', content: '请解释：' + text }
       ],
       stream: true,
@@ -742,10 +744,14 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
 
     // ── Stream response ──
     panelRefresh.style.display = 'none';
-    panelBody.innerHTML = '<div class="ai-body"></div>';
+    panelBody.innerHTML =
+      '<div class="ai-reasoning"></div>' +
+      '<div class="ai-body"></div>';
+    var aiReasoningEl = panelBody.querySelector('.ai-reasoning');
     var aiBodyEl = panelBody.querySelector('.ai-body');
     var fullText = '';
     var fullReasoning = '';
+    var hasFirstContent = false;
     var buffer = '';
 
     var reader = resp.body.getReader();
@@ -766,25 +772,26 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
           try {
             var json = JSON.parse(line.slice(6));
             var delta = json.choices && json.choices[0] && json.choices[0].delta;
-            var didUpdate = false;
             if (delta && delta.reasoning_content) {
               fullReasoning += delta.reasoning_content;
-              didUpdate = true;
+              aiReasoningEl.innerHTML =
+                '<details class="ai-think-wrap" open>' +
+                '<summary class="ai-think-summary">🧠 推理过程</summary>' +
+                '<div class="ai-think">' + esc(fullReasoning) + '</div>' +
+                '</details>';
             }
             if (delta && delta.content) {
-              fullText += delta.content;
-              didUpdate = true;
-            }
-            if (didUpdate) {
-              var rendered = '';
-              if (fullReasoning) {
-                rendered += '<details class="ai-think-wrap">' +
-                  '<summary class="ai-think-summary">🧠 推理过程</summary>' +
-                  '<div class="ai-think">' + esc(fullReasoning) + '</div>' +
-                  '</details>';
+              if (!hasFirstContent) {
+                hasFirstContent = true;
+                var detailsEl = aiReasoningEl.querySelector('.ai-think-wrap');
+                if (detailsEl) {
+                  detailsEl.removeAttribute('open');
+                  var summaryEl = detailsEl.querySelector('.ai-think-summary');
+                  if (summaryEl) summaryEl.textContent = '✅ 思考已完成';
+                }
               }
-              rendered += renderMarkdown(fullText);
-              aiBodyEl.innerHTML = rendered + '<span class="ai-cursor"></span>';
+              fullText += delta.content;
+              aiBodyEl.innerHTML = renderMarkdown(fullText) + '<span class="ai-cursor"></span>';
               aiBodyEl.scrollTop = aiBodyEl.scrollHeight;
             }
           } catch (_) {}
@@ -920,6 +927,10 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
     // Line breaks → paragraphs
     html = '<p>' + html.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
+    // Headings (#, ##, ###) — unwrap from <p> tags
+    html = html.replace(/^<p>(#{1,3})\s+(.+?)<\/p>$/gm, function(_, hashes, content) {
+      return '<h' + hashes.length + '>' + content + '</h' + hashes.length + '>';
+    });
     return html;
   }
 
