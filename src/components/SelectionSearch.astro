@@ -1050,6 +1050,22 @@
   // ── Selection detection ──
   document.addEventListener('mouseup', function (e) {
     if (popupTimer) clearTimeout(popupTimer);
+
+    // Prevent browser's native selection toolbar (Edge/Chrome)
+    // when text is selected inside the knowledge content area.
+    // This must run synchronously (not in setTimeout) to be effective.
+    (function () {
+      var s = window.getSelection();
+      var t = (s && s.toString().trim()) || '';
+      if (t.length === 0 || t.length > 300) return;
+      var n = s.anchorNode;
+      if (!n) return;
+      var el = n.nodeType === 3 ? n.parentElement : n;
+      if (el && el.closest('.knowledge-content')) {
+        e.preventDefault();
+      }
+    })();
+
     if (popup.contains(e.target) || panel.contains(e.target)) return;
     if (panel.classList.contains('visible') && !panel.contains(e.target)) {
       hidePanel();
