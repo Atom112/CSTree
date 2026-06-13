@@ -309,6 +309,13 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
   .dark .ai-think-summary { color: #94a3b8; background: #1e293b; }
   .ai-think-summary:hover { background: #e2e8f0; }
   .dark .ai-think-summary:hover { background: #334155; }
+  .ai-think-summary svg {
+    width: 1em;
+    height: 1em;
+    vertical-align: middle;
+    margin-right: 2px;
+    flex-shrink: 0;
+  }
   .ai-think-wrap[open] .ai-think-summary { border-bottom: 1px solid #e2e8f0; }
   .dark .ai-think-wrap[open] .ai-think-summary { border-bottom-color: #334155; }
   .ai-reasoning { margin-bottom: 8px; }
