@@ -374,6 +374,34 @@
   .dark .ai-config-hint code { background: #1e293b; }
   .ai-config-hint a { color: #2563eb; }
   .dark .ai-config-hint a { color: #60a5fa; }
+
+  /* ── Model selector ── */
+  .ai-model-section { margin-top: 16px; }
+  .ai-model-section-title {
+    font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 8px;
+  }
+  .dark .ai-model-section-title { color: #94a3b8; }
+  .ai-model-opts { display: flex; flex-direction: column; gap: 4px; }
+  .ai-model-opt {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+    background: #fff;
+  }
+  .ai-model-opt:hover { border-color: #cbd5e1; background: #f8fafc; }
+  .ai-model-opt.active { border-color: #7c3aed; background: #f5f3ff; }
+  .dark .ai-model-opt { background: #1e293b; border-color: #334155; }
+  .dark .ai-model-opt:hover { border-color: #475569; background: #0f172a; }
+  .dark .ai-model-opt.active { border-color: #a78bfa; background: #2e1065; }
+  .ai-model-opt input[type="radio"] {
+    accent-color: #7c3aed; flex-shrink: 0; margin: 0; width: 14px; height: 14px;
+  }
+  .ai-model-label { font-size: 13px; font-weight: 600; color: #1e293b; }
+  .dark .ai-model-label { color: #e2e8f0; }
+  .ai-model-desc { font-size: 11px; color: #94a3b8; margin-left: auto; }
 </style>
 
 <script>
@@ -465,6 +493,26 @@
   var activeMode = null;   // 'kb' | 'ai'
   var aiAbortCtrl = null;  // AbortController for AI stream
   var localModel = null;   // Transformers.js pipeline (lazy)
+
+  /* ------------------------------------------------------------------
+     Model list
+     Display names shown to user, API IDs sent to SiliconFlow
+     ------------------------------------------------------------------ */
+  var AI_MODELS = [
+    { id: 'Qwen/Qwen3-8B',             label: 'Qwen3-8B',          desc: '通义千问 Qwen3（默认）' },
+    { id: 'THUDM/GLM-Z1-9B-0414',       label: 'GLM Z1-9B',        desc: '智谱 GLM 推理版' },
+    { id: 'deepseek-ai/DeepSeek-R1-0528-Qwen3-8B', label: 'DeepSeek R1-8B', desc: 'DeepSeek 推理增强' },
+  ];
+  var AI_MODEL_KEY = 'cstree_ai_model';
+
+  function getSelectedModel() {
+    try {
+      var stored = localStorage.getItem(AI_MODEL_KEY);
+      if (stored) return stored;
+    } catch(_) {}
+    return AI_MODELS[0].id;
+  }
+  function setSelectedModel(id) { try { localStorage.setItem(AI_MODEL_KEY, id); } catch(_) {} }
 
   /* ------------------------------------------------------------------
      API key management
@@ -623,7 +671,7 @@
       '\n\n如果知识库内容不相关或不充分，请基于你自己的知识回答。回答应简洁明了，适合初学者理解。';
 
     var body = JSON.stringify({
-      model: 'Qwen/Qwen2.5-7B-Instruct',
+      model: getSelectedModel(),
       messages: [
         { role: 'system', content: systemMsg },
         { role: 'user', content: '请解释：' + text }
@@ -820,6 +868,21 @@
       ? '<p>AI 服务已由站长预配置，可直接使用。<br>你也可以在此输入自己的 API Key 来覆盖默认设置。</p>'
       : '<p>输入你的 API Key 以使用在线 AI 服务<br>（9B 以下模型永久免费）</p>';
 
+    var selectedModel = getSelectedModel();
+
+    // Build model selector HTML
+    var modelOptsHtml = '';
+    for (var mi = 0; mi < AI_MODELS.length; mi++) {
+      var m = AI_MODELS[mi];
+      var checked = m.id === selectedModel ? 'checked' : '';
+      modelOptsHtml +=
+        '<label class="ai-model-opt' + (checked ? ' active' : '') + '">' +
+        '  <input type="radio" name="ai-model" value="' + m.id + '" ' + checked + '>' +
+        '  <span class="ai-model-label">' + esc(m.label) + '</span>' +
+        '  <span class="ai-model-desc">' + esc(m.desc) + '</span>' +
+        '</label>';
+    }
+
     panelBody.innerHTML =
       '<div class="ai-config">' +
       '  <h3>配置 AI 助手</h3>' +
@@ -834,13 +897,17 @@
       '    <button class="ai-config-btn ai-config-btn-secondary" id="ai-local-fallback">离线模式</button>' +
       '  </div>' +
       statusHtml +
+      '  <div class="ai-model-section">' +
+      '    <div class="ai-model-section-title">🧠 选择模型</div>' +
+      '    <div class="ai-model-opts" id="ai-model-opts">' + modelOptsHtml + '</div>' +
+      '  </div>' +
       '  <div class="ai-config-hint">' +
       '    <strong>📌 ' + (hasBuiltin ? '使用自己的 API Key（可选）' : '如何获取 API Key？') + '</strong><br>' +
       '    1. 访问 <a href="https://cloud.siliconflow.cn" target="_blank">cloud.siliconflow.cn</a> 注册账号<br>' +
       '    2. 进入「API 密钥」页面 → 创建 API Key<br>' +
       '    3. 复制密钥并粘贴到上方输入框<br>' +
       '    4. 点击「保存」<br><br>' +
-      '    💡 使用 Qwen2.5-7B-Instruct 模型，永久免费<br>' +
+      '    💡 默认使用 Qwen3-8B 模型，9B 以下永久免费<br>' +
       '    🔒 API Key 仅存储在本地浏览器中' +
       '  </div>' +
       '</div>';
@@ -851,6 +918,21 @@
     var saveBtn = document.getElementById('ai-key-save');
     var clearBtn = document.getElementById('ai-key-clear');
     var localBtn = document.getElementById('ai-local-fallback');
+
+    // Model selector: radio click → update active style + save selection
+    var modelOpts = document.getElementById('ai-model-opts');
+    if (modelOpts) {
+      modelOpts.addEventListener('change', function (e) {
+        if (e.target.name === 'ai-model') {
+          // Update active class
+          var labels = modelOpts.querySelectorAll('.ai-model-opt');
+          for (var li = 0; li < labels.length; li++) {
+            labels[li].classList.toggle('active', labels[li].querySelector('input').checked);
+          }
+          setSelectedModel(e.target.value);
+        }
+      });
+    }
 
     saveBtn.addEventListener('click', function () {
       var val = input.value.trim();
