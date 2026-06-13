@@ -257,7 +257,36 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
     color: #94a3b8;
     font-style: italic;
     font-size: 13px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    line-height: 1.6;
+    max-height: 300px;
+    overflow-y: auto;
   }
+  .dark .ai-think { background: #0f172a; color: #94a3b8; }
+  .ai-think-wrap {
+    margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .dark .ai-think-wrap { border-color: #334155; }
+  .ai-think-summary {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    padding: 6px 12px;
+    background: #f1f5f9;
+    user-select: none;
+  }
+  .dark .ai-think-summary { color: #94a3b8; background: #1e293b; }
+  .ai-think-summary:hover { background: #e2e8f0; }
+  .dark .ai-think-summary:hover { background: #334155; }
+  .ai-think-wrap[open] .ai-think-summary { border-bottom: 1px solid #e2e8f0; }
+  .dark .ai-think-wrap[open] .ai-think-summary { border-bottom-color: #334155; }
   .ai-cursor {
     display: inline-block;
     width: 2px;
@@ -713,10 +742,10 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
 
     // ── Stream response ──
     panelRefresh.style.display = 'none';
-    panelBody.innerHTML = '<div class="ai-body"><span class="ai-cursor"></span></div>';
+    panelBody.innerHTML = '<div class="ai-body"></div>';
     var aiBodyEl = panelBody.querySelector('.ai-body');
-    var cursorEl = panelBody.querySelector('.ai-cursor');
     var fullText = '';
+    var fullReasoning = '';
     var buffer = '';
 
     var reader = resp.body.getReader();
@@ -737,10 +766,25 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
           try {
             var json = JSON.parse(line.slice(6));
             var delta = json.choices && json.choices[0] && json.choices[0].delta;
+            var didUpdate = false;
+            if (delta && delta.reasoning_content) {
+              fullReasoning += delta.reasoning_content;
+              didUpdate = true;
+            }
             if (delta && delta.content) {
               fullText += delta.content;
-              // Simple markdown rendering
-              aiBodyEl.innerHTML = renderMarkdown(fullText) + '<span class="ai-cursor"></span>';
+              didUpdate = true;
+            }
+            if (didUpdate) {
+              var rendered = '';
+              if (fullReasoning) {
+                rendered += '<details class="ai-think-wrap">' +
+                  '<summary class="ai-think-summary">🧠 推理过程</summary>' +
+                  '<div class="ai-think">' + esc(fullReasoning) + '</div>' +
+                  '</details>';
+              }
+              rendered += renderMarkdown(fullText);
+              aiBodyEl.innerHTML = rendered + '<span class="ai-cursor"></span>';
               aiBodyEl.scrollTop = aiBodyEl.scrollHeight;
             }
           } catch (_) {}
@@ -751,7 +795,8 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
     }
 
     // Done — remove cursor, show sources
-    cursorEl.classList.add('done');
+    var finalCursor = aiBodyEl.querySelector('.ai-cursor');
+    if (finalCursor) finalCursor.classList.add('done');
     showAISources(context);
     panelRefresh.style.display = 'block';
   }
@@ -849,7 +894,18 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
      Simple markdown renderer (safe, basic)
      ================================================================== */
   function renderMarkdown(text) {
-    var html = esc(text);
+    // Handle think/reasoning tags BEFORE HTML escaping
+    var thinkHtml = '';
+    text = text.replace(/<think>([\s\S]*?)<\/think>/g, function (_, content) {
+      thinkHtml += '<details class="ai-think-wrap">' +
+        '<summary class="ai-think-summary">🧠 推理过程</summary>' +
+        '<div class="ai-think">' + esc(content.trim()) + '</div>' +
+        '</details>';
+      return '';
+    });
+    // Remove any orphaned think tags
+    text = text.replace(/<\/?think>/g, '');
+    var html = thinkHtml + esc(text);
     // Code blocks (```...```)
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
       return '<pre><code>' + esc(code.trim()) + '</code></pre>';
