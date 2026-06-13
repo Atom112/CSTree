@@ -288,6 +288,12 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
   .ai-think-wrap[open] .ai-think-summary { border-bottom: 1px solid #e2e8f0; }
   .dark .ai-think-wrap[open] .ai-think-summary { border-bottom-color: #334155; }
   .ai-reasoning { margin-bottom: 8px; }
+  .ai-disclaimer {
+    margin-top: 16px;
+    font-size: 11px;
+    color: #94a3b8;
+    text-align: center;
+  }
   .ai-cursor {
     display: inline-block;
     width: 2px;
@@ -540,7 +546,6 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
   var panelClose  = panel.querySelector('.sel-panel-close');
   var panelRefresh= panel.querySelector('.sel-panel-refresh');
   var panelModel  = panel.querySelector('#sel-model-sel');
-
   /* ==================================================================
      State
      ================================================================== */
@@ -653,7 +658,6 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
     hidePopup();
     activeMode = 'kb';
     panelRefresh.style.display = 'none';
-    panelConfig.style.display = 'none';
     panelTitle.innerHTML = '在知识库中搜索 <span class="sel-panel-query">' + esc(text) + '</span>';
     panelBody.innerHTML = '<div class="sel-loading">正在搜索</div>';
     showPanel(rect);
@@ -774,11 +778,21 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
             var delta = json.choices && json.choices[0] && json.choices[0].delta;
             if (delta && delta.reasoning_content) {
               fullReasoning += delta.reasoning_content;
-              aiReasoningEl.innerHTML =
-                '<details class="ai-think-wrap" open>' +
-                '<summary class="ai-think-summary">🧠 推理过程</summary>' +
-                '<div class="ai-think">' + esc(fullReasoning) + '</div>' +
-                '</details>';
+              var thinkWrap = aiReasoningEl.querySelector('.ai-think-wrap');
+              if (!thinkWrap) {
+                // First chunk — create the details element (open by default)
+                aiReasoningEl.innerHTML =
+                  '<details class="ai-think-wrap" open>' +
+                  '<summary class="ai-think-summary">' + svg(ICONS.bulb, '') + ' 推理过程</summary>' +
+                  '<div class="ai-think"></div>' +
+                  '</details>';
+                thinkWrap = aiReasoningEl.querySelector('.ai-think-wrap');
+              }
+              // Only update the content div — preserve details open/closed state
+              var thinkDiv = aiReasoningEl.querySelector('.ai-think');
+              if (thinkDiv) thinkDiv.innerHTML = esc(fullReasoning);
+              // Auto-scroll to show latest reasoning
+              if (thinkDiv) thinkDiv.scrollTop = thinkDiv.scrollHeight;
             }
             if (delta && delta.content) {
               if (!hasFirstContent) {
@@ -787,7 +801,7 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
                 if (detailsEl) {
                   detailsEl.removeAttribute('open');
                   var summaryEl = detailsEl.querySelector('.ai-think-summary');
-                  if (summaryEl) summaryEl.textContent = '✅ 思考已完成';
+                  if (summaryEl) summaryEl.innerHTML = svg(ICONS.check, '') + ' 思考已完成';
                 }
               }
               fullText += delta.content;
@@ -801,9 +815,10 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
       if (err.name === 'AbortError') return;
     }
 
-    // Done — remove cursor, show sources
+    // Done — remove cursor, show sources, add disclaimer
     var finalCursor = aiBodyEl.querySelector('.ai-cursor');
     if (finalCursor) finalCursor.classList.add('done');
+    aiBodyEl.insertAdjacentHTML('beforeend', '<div class="ai-disclaimer">AI 生成，仅供参考</div>');
     showAISources(context);
     panelRefresh.style.display = 'block';
   }
@@ -905,7 +920,7 @@ const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
     var thinkHtml = '';
     text = text.replace(/<think>([\s\S]*?)<\/think>/g, function (_, content) {
       thinkHtml += '<details class="ai-think-wrap">' +
-        '<summary class="ai-think-summary">🧠 推理过程</summary>' +
+        '<summary class="ai-think-summary">' + svg(ICONS.bulb, '') + ' 推理过程</summary>' +
         '<div class="ai-think">' + esc(content.trim()) + '</div>' +
         '</details>';
       return '';
