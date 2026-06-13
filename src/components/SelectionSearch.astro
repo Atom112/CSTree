@@ -3,6 +3,9 @@
 // 仅在知识节点内容页生效 (.knowledge-content 区域内)
 // 提供：复制、搜索网络、知识库搜索、问 AI 四个操作
 // AI 模式：默认免费 API (硅基流动)，离线降级 Transformers.js 浏览器模型
+
+// Build-time injected API key from env var (set in Cloudflare Pages dashboard)
+const BUILTIN_API_KEY = import.meta.env.PUBLIC_SILICONFLOW_API_KEY || '';
 ---
 
 <style is:global>
@@ -404,6 +407,9 @@
   .ai-model-desc { font-size: 11px; color: #94a3b8; margin-left: auto; }
 </style>
 
+<!-- AI config injected at build time (see frontmatter) -->
+<div id="cstree-ai-config" data-api-key={BUILTIN_API_KEY} style="display:none"></div>
+
 <script>
 (function () {
   'use strict';
@@ -523,8 +529,11 @@
   var AI_KEY = 'cstree_ai_api_key';
   var AI_MODE = 'cstree_ai_mode';  // 'api' | 'local'
 
-  // Build-time injected API key (set by site owner via Cloudflare Pages env vars)
-  var BUILTIN_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PUBLIC_SILICONFLOW_API_KEY) || '';
+  // Build-time injected API key — read from hidden element rendered by Astro frontmatter
+  var BUILTIN_KEY = (function () {
+    var el = document.getElementById('cstree-ai-config');
+    return el ? (el.getAttribute('data-api-key') || '') : '';
+  })();
 
   function getApiKey() {
     // localStorage override takes priority (user can manually enter a different key)
