@@ -167,6 +167,41 @@ void my_write(int fd, const char* buf, int len) {
 
 > 🔑 注意在 GCC 内联汇编中，引用寄存器要用 `%%eax`（两个百分号）——单 `%` 被保留给操作数引用。
 
+## 实际运用：什么时候真的需要内联汇编？
+
+```c
+// 场景一：CPU 指令不支持直接用 C 实现
+// 读取 CPU 时间戳计数器（性能分析用）
+static inline unsigned long long read_tsc() {
+    unsigned long long tsc;
+    __asm__ volatile("rdtsc" : "=A" (tsc));
+    return tsc;
+}
+
+// 场景二：原子操作（多线程无锁编程）
+// 原子地做 "比较并交换"——实现锁的底层
+static inline int atomic_cas(int* ptr, int old, int new) {
+    int prev;
+    __asm__ volatile(
+        "lock cmpxchg %2, %1"
+        : "=a" (prev), "+m" (*ptr)
+        : "r" (new), "0" (old)
+        : "memory"
+    );
+    return prev;
+}
+
+// 场景三：关中断（操作系统内核用）
+static inline void disable_interrupts() {
+    __asm__ volatile("cli");  // 关闭 CPU 中断
+}
+static inline void enable_interrupts() {
+    __asm__ volatile("sti");  // 开启 CPU 中断
+}
+```
+
+这三个场景（硬件交互、原子操作、系统控制）都是 C 语言无法直接表达的——必须用内联汇编。
+
 ### GCC 内联汇编的常用寄存器约束
 
 x86 平台的具体约束字母：

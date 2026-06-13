@@ -212,6 +212,46 @@ loop_end:
     └──── JMP ────────────────────────┘
 ```
 
+### for 循环：从 C 到底层
+
+```c
+// C 的 for 循环
+for (int i = 0; i < 10; i++) {
+    sum += i;
+}
+```
+
+C 的 `for (初始化; 条件; 更新)` 可以翻译成 while 循环结构，再翻译成汇编：
+
+```
+C 的 for 循环等价于：
+    初始化;          → MOV R1, #0   (i = 0)
+    while (条件) {   → LOOP:  CMP R1, #10
+                         JGE LOOP_END
+       循环体;        →   (计算 sum += i)
+       更新;          →   ADD R1, #1  (i++)
+                         JMP LOOP
+    }                → LOOP_END:
+```
+
+完整的汇编：
+
+```asm
+    MOV R1, #0           ; i = 0（初始化）
+    MOV R2, #0           ; sum = 0
+LOOP:
+    CMP R1, #10          ; i < 10？（条件判断）
+    JGE LOOP_END         ; 不满足则跳出
+    ADD R2, R2, R1       ; sum += i（循环体）
+    ADD R1, R1, #1       ; i++（更新）
+    JMP LOOP             ; 回到条件判断
+LOOP_END:
+    STORE R2, [addr_sum] ; 保存结果
+```
+
+**关键模式**：`CMP → 条件跳转 → 循环体 → 更新 → JMP 回到顶部 → 跳出后继续`——这是所有循环的底层模板。
+```
+
 ### for 循环
 
 ```asm

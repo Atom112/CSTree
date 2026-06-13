@@ -428,6 +428,39 @@ _mm256_add_ps(a, b);    // 全用 AVX
 _mm256_add_ps(c, d);    // 全用 AVX
 ```
 
+## SIMD 的实际收益：一个直观的对比
+
+用 SIMD 处理数组求和——两种方式对比：
+
+```c
+// 方式一：普通循环（SISD）
+float sum_scalar(float* arr, int n) {
+    float sum = 0;
+    for (int i = 0; i < n; i++) sum += arr[i];
+    return sum;
+}
+
+// 方式二：SSE 向量化（SIMD）
+float sum_sse(float* arr, int n) {
+    __m128 vec = _mm_setzero_ps();  // 初始化 4 个 0
+    for (int i = 0; i < n; i += 4) {
+        __m128 data = _mm_loadu_ps(&arr[i]);  // 一次加载 4 个
+        vec = _mm_add_ps(vec, data);          // 一次加 4 个
+    }
+    // 最后把 4 个结果累加
+    float result[4];
+    _mm_storeu_ps(result, vec);
+    return result[0] + result[1] + result[2] + result[3];
+}
+```
+
+**性能差异**：
+- 普通循环：n 次加法，n 次循环控制
+- SIMD 版本：n/4 次加法（一次加 4 个），n/4 次循环控制
+- **理论上快 4 倍**——实际约 2-3 倍（有加载和对齐的开销）
+
+这就是为什么现代编译器遇到循环处理连续数组时，会自动生成 SIMD 指令——前提是开启 `-O2` 优化。
+
 ## 编译器对 SIMD 的支持
 
 要使用 SIMD intrinsics，需要包含对应的头文件：

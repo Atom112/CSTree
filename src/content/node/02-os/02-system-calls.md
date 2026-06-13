@@ -211,6 +211,32 @@ printf → fwrite → write() → syscall 指令 → 内核
 2. **缓冲**：`printf` 先把数据写入缓冲区，满了才调用 `write`——减少系统调用次数
 3. **易用性**：比直接编写系统调用参数简单得多
 
+## 实际体验：用 strace 观察系统调用
+
+你的 Linux 系统上可以用 `strace` 实时观察任意程序的系统调用：
+
+```bash
+# 观察 ls 命令的系统调用
+$ strace -c ls
+
+% time    秒    calls   errors  syscall
+ 32.15    0.0002    5           openat
+ 18.44    0.0001    5           read
+ 15.23    0.0001    5           close
+ 10.25    0.0001    4           fstat
+  8.22    0.0001    1           write
+  ...      ...      ...         ...
+
+# 观察 "hello world" 用了哪些系统调用
+$ strace ./hello
+execve("./hello", ...) = 0
+brk(NULL)               = 0x555555...
+write(1, "Hello World\n", 12) = 12    ← 关键！输出一行用了 1 次 write
+exit_group(0)           = ?
+```
+
+`write(1, "Hello World\n", 12)` 这行就是"用户态 → 内核态"的切换点——`printf` 最终调用 `write` 系统调用来真正输出到屏幕。`strace` 是调试"程序怎么和系统交互"的最有力工具。
+
 ## 小结
 
 | 概念 | 要点 |

@@ -156,6 +156,43 @@ CPU 发出虚拟地址 VA
 
 > 💡 在 64 位 Linux 上，用户空间一般是 47 位（约 128TB），内核空间也是 47 位。这个分割点在地址空间的中间，而不是 32 位的 3:1 分割。
 
+## 实际运用：malloc 背后的地址空间变化
+
+```c
+// 一个简单的 C 程序
+#include <stdio.h>
+#include <stdlib.h>
+
+int global_var = 42;       // 数据段
+int uninit_var;             // BSS 段
+
+int main() {
+    int local = 10;        // 栈
+    int* heap = malloc(100);  // 堆
+    
+    printf("代码段 (main):   %p\n", main);
+    printf("数据段 (global): %p\n", &global_var);
+    printf("BSS (uninit):    %p\n", &uninit_var);
+    printf("堆 (malloc):     %p\n", heap);
+    printf("栈 (local):      %p\n", &local);
+    
+    free(heap);
+    return 0;
+}
+```
+
+输出示例（每次运行地址可能不同，但相对位置固定）：
+
+```
+代码段 (main):   0x4004b6       ← 低地址
+数据段 (global): 0x400900       ← 代码段上方
+BSS (uninit):    0x400910       ← 数据段上方
+堆 (malloc):     0x602010       ← BSS 上方
+栈 (local):      0x7fff1234     ← 高地址
+```
+
+**关键观察**：代码段在最低地址，栈在最高地址，堆在中间向上增长——和你刚学的进程地址空间布局完全吻合。每个程序都从 0x400000（Linux 默认加载地址）开始，认为自己独占整个地址空间。
+
 ## 查看进程地址空间
 
 ```bash

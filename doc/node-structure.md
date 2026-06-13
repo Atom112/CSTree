@@ -233,7 +233,467 @@ interrupts-exceptions (中断与异常，来自硬件)
 
 ### 05-databases — 数据库方向
 
-> ⬜ 暂无节点，等待添加
+```
+database-overview (数据库系统概述) [beginner]
+  id: database-overview | order: 1 | parent: 无
+  prerequisites: file-system-interface
+  ├── er-model (实体关系模型) [intermediate]
+  │     id: er-model | order: 2 | parent: database-overview
+  │     prerequisites: database-overview
+  │     └── relational-model (关系模型与关系代数) [intermediate]
+  │           id: relational-model | order: 3 | parent: er-model
+  │           prerequisites: er-model
+  │           └── sql-basics (SQL基础) [intermediate]
+  │                 id: sql-basics | order: 4 | parent: relational-model
+  │                 prerequisites: relational-model
+  │                 ├── sql-joins (连接查询与子查询) [intermediate]
+  │                 │     id: sql-joins | order: 5 | parent: sql-basics
+  │                 │     prerequisites: sql-basics
+  │                 └── sql-advanced (视图、索引与事务) [intermediate]
+  │                       id: sql-advanced | order: 6 | parent: sql-basics
+  │                       prerequisites: sql-basics
+  │                       └── acid (ACID特性) [advanced]
+  │                             id: acid | order: 13 | parent: sql-advanced
+  │                             prerequisites: sql-advanced
+  │                             ├── isolation-levels (事务隔离级别) [advanced]
+  │                             │     id: isolation-levels | order: 14 | parent: acid
+  │                             │     prerequisites: acid
+  │                             ├── lock-concurrency (锁协议与并发控制) [advanced]
+  │                             │     id: lock-concurrency | order: 15 | parent: acid
+  │                             │     prerequisites: acid
+  │                             └── logging-recovery (日志与恢复) [advanced]
+  │                                   id: logging-recovery | order: 16 | parent: acid
+  │                                   prerequisites: acid
+  ├── functional-dependency (函数依赖) [advanced]
+  │     id: functional-dependency | order: 7 | parent: database-overview
+  │     prerequisites: database-overview
+  │     └── normalization (范式 1NF ~ BCNF) [advanced]
+  │           id: normalization | order: 8 | parent: functional-dependency
+  │           prerequisites: functional-dependency
+  │           └── denormalization (规范化与反规范化) [advanced]
+  │                 id: denormalization | order: 9 | parent: normalization
+  │                 prerequisites: normalization
+  ├── b-plus-tree (B+树索引) [advanced]
+  │     id: b-plus-tree | order: 10 | parent: database-overview
+  │     prerequisites: database-overview
+  ├── hash-index (哈希索引) [advanced]
+  │     id: hash-index | order: 11 | parent: database-overview
+  │     prerequisites: database-overview
+  ├── query-optimization (查询执行与优化) [advanced]
+  │     id: query-optimization | order: 12 | parent: database-overview
+  │     prerequisites: sql-basics, b-plus-tree
+  └── nosql-databases (NoSQL数据库概述) [intermediate]
+        id: nosql-databases | order: 17 | parent: database-overview
+        prerequisites: database-overview
+```
+
+### 06-algorithms — 算法与数据结构方向
+
+```
+array-linked-list (数组与链表) [beginner]
+  id: array-linked-list | order: 1 | parent: 无
+  prerequisites: 无
+  ├── stack-queue (栈与队列) [beginner]
+  │     id: stack-queue | order: 2 | parent: array-linked-list
+  │     prerequisites: array-linked-list
+  │     ├── hash-table (哈希表) [intermediate]
+  │     │     id: hash-table | order: 3 | parent: stack-queue
+  │     │     prerequisites: array-linked-list
+  │     │     └── binary-tree (二叉树与遍历) [intermediate]
+  │     │           id: binary-tree | order: 4 | parent: hash-table
+  │     │           prerequisites: stack-queue
+  │     │           ├── binary-search-tree (二叉搜索树) [intermediate]
+  │     │           │     id: binary-search-tree | order: 5 | parent: binary-tree
+  │     │           │     prerequisites: binary-tree
+  │     │           │     ├── heap (堆与优先队列) [intermediate]
+  │     │           │     │     id: heap | order: 6 | parent: binary-search-tree
+  │     │           │     │     prerequisites: binary-tree
+  │     │           │     │     └── advanced-sort (高级排序) [intermediate]
+  │     │           │     │           id: advanced-sort | order: 13 | parent: heap
+  │     │           │     │           prerequisites: heap
+  │     │           │     └── balanced-tree (平衡树 AVL/红黑树) [advanced]
+  │     │           │           id: balanced-tree | order: 7 | parent: binary-search-tree
+  │     │           │           prerequisites: binary-search-tree
+  │     │           └── graph-representation (图的表示) [intermediate]
+  │     │                 id: graph-representation | order: 8 | parent: binary-tree
+  │     │                 prerequisites: array-linked-list
+  │     │                 └── dfs-bfs (DFS / BFS) [intermediate]
+  │     │                       id: dfs-bfs | order: 9 | parent: graph-representation
+  │     │                       prerequisites: stack-queue, graph-representation
+  │     │                       ├── shortest-path (最短路径 Dijkstra/Floyd) [advanced]
+  │     │                       │     id: shortest-path | order: 10 | parent: dfs-bfs
+  │     │                       │     prerequisites: dfs-bfs
+  │     │                       └── minimum-spanning-tree (最小生成树 Kruskal/Prim) [advanced]
+  │     │                             id: minimum-spanning-tree | order: 11 | parent: dfs-bfs
+  │     │                             prerequisites: dfs-bfs
+  │     └── recursion-divide-conquer (递归与分治) [intermediate]
+  │           id: recursion-divide-conquer | order: 15 | parent: stack-queue
+  │           prerequisites: stack-queue
+  │           ├── dynamic-programming (动态规划) [advanced]
+  │           │     id: dynamic-programming | order: 16 | parent: recursion-divide-conquer
+  │           │     prerequisites: recursion-divide-conquer
+  │           ├── greedy (贪心算法) [advanced]
+  │           │     id: greedy | order: 17 | parent: recursion-divide-conquer
+  │           │     prerequisites: recursion-divide-conquer
+  │           ├── backtracking (回溯与剪枝) [advanced]
+  │           │     id: backtracking | order: 18 | parent: recursion-divide-conquer
+  │           │     prerequisites: recursion-divide-conquer
+  ├── basic-sort (基础排序 插入/选择/冒泡) [beginner]
+  │     id: basic-sort | order: 12 | parent: array-linked-list
+  │     prerequisites: array-linked-list
+  ├── binary-search (二分搜索) [beginner]
+  │     id: binary-search | order: 14 | parent: array-linked-list
+  │     prerequisites: array-linked-list
+  ├── big-o-notation (时间复杂度与大 O) [intermediate]
+  │     id: big-o-notation | order: 19 | parent: recursion-divide-conquer
+  │     prerequisites: recursion-divide-conquer
+  │     └── p-vs-np (P vs NP 简述) [advanced]
+  │           id: p-vs-np | order: 20 | parent: big-o-notation
+  │           prerequisites: big-o-notation
+```
+
+### 07-programming-languages — 程序语言理论方向
+
+```
+programming-paradigms (编程语言范式概述) [beginner]
+  id: programming-paradigms | order: 1 | parent: 无
+  prerequisites: 无
+  ├── variable-scope (变量、作用域与绑定) [intermediate]
+  │     id: variable-scope | order: 2 | parent: programming-paradigms
+  │     prerequisites: programming-paradigms
+  │     └── evaluation-strategies (求值策略) [intermediate]
+  │           id: evaluation-strategies | order: 3 | parent: variable-scope
+  │           prerequisites: variable-scope
+  │           ├── lambda-calculus (Lambda演算基础) [advanced]
+  │           │     id: lambda-calculus | order: 5 | parent: evaluation-strategies
+  │           │     prerequisites: evaluation-strategies
+  │           └── garbage-collection (垃圾回收机制) [advanced]
+  │                 id: garbage-collection | order: 12 | parent: evaluation-strategies
+  │                 prerequisites: evaluation-strategies
+  │                 └── concurrency-models (并发编程模型) [advanced]
+  │                       id: concurrency-models | order: 13 | parent: garbage-collection
+  │                       prerequisites: garbage-collection
+  ├── higher-order-functions (高阶函数与闭包) [intermediate]
+  │     id: higher-order-functions | order: 4 | parent: programming-paradigms
+  │     prerequisites: programming-paradigms
+  │     └── algebraic-data-types (代数数据类型与模式匹配) [intermediate]
+  │           id: algebraic-data-types | order: 6 | parent: higher-order-functions
+  │           prerequisites: higher-order-functions
+  │           └── lazy-evaluation (惰性求值与无穷数据结构) [advanced]
+  │                 id: lazy-evaluation | order: 7 | parent: algebraic-data-types
+  │                 prerequisites: algebraic-data-types
+  ├── static-vs-dynamic (静态vs动态类型) [intermediate]
+  │     id: static-vs-dynamic | order: 8 | parent: programming-paradigms
+  │     prerequisites: programming-paradigms
+  │     ├── type-inference (类型推导与多态) [advanced]
+  │     │     id: type-inference | order: 9 | parent: static-vs-dynamic
+  │     │     prerequisites: static-vs-dynamic
+  │     └── subtyping (子类型与变型) [advanced]
+  │           id: subtyping | order: 10 | parent: static-vs-dynamic
+  │           prerequisites: static-vs-dynamic
+  ├── operational-semantics (操作语义) [advanced]
+  │     id: operational-semantics | order: 11 | parent: programming-paradigms
+  │     prerequisites: programming-paradigms
+  └── domain-specific-languages (领域特定语言) [advanced]
+        id: domain-specific-languages | order: 14 | parent: programming-paradigms
+        prerequisites: programming-paradigms
+```
+
+### 08-software-eng — 软件工程方向
+
+```
+software-lifecycle (软件生命周期与过程模型) [beginner]
+  id: software-lifecycle | order: 1 | parent: 无
+  prerequisites: 无
+  ├── agile-scrum (敏捷开发与Scrum) [beginner]
+  │     id: agile-scrum | order: 2 | parent: software-lifecycle
+  │     prerequisites: software-lifecycle
+  │     └── version-control (版本控制 Git) [beginner]
+  │           id: version-control | order: 3 | parent: agile-scrum
+  │           prerequisites: agile-scrum
+  ├── requirements-analysis (需求获取与分析) [intermediate]
+  │     id: requirements-analysis | order: 4 | parent: software-lifecycle
+  │     prerequisites: software-lifecycle
+  │     └── software-architecture (软件架构与设计模式) [advanced]
+  │           id: software-architecture | order: 5 | parent: requirements-analysis
+  │           prerequisites: requirements-analysis
+  │           ├── uml-modeling (UML建模) [intermediate]
+  │           │     id: uml-modeling | order: 6 | parent: software-architecture
+  │           │     prerequisites: software-architecture
+  │           └── solid-principles (SOLID原则) [intermediate]
+  │                 id: solid-principles | order: 7 | parent: software-architecture
+  │                 prerequisites: software-architecture
+  │                 └── software-testing (软件测试) [intermediate]
+  │                       id: software-testing | order: 8 | parent: solid-principles
+  │                       prerequisites: solid-principles
+  │                       └── ci-cd (CI/CD与DevOps) [intermediate]
+  │                             id: ci-cd | order: 9 | parent: software-testing
+  │                             prerequisites: software-testing, version-control
+  │                             └── code-review (代码审查与重构) [intermediate]
+  │                                   id: code-review | order: 10 | parent: ci-cd
+  │                                   prerequisites: ci-cd
+  ├── api-design (API设计与REST) [intermediate]
+  │     id: api-design | order: 11 | parent: software-lifecycle
+  │     prerequisites: software-lifecycle
+  │     └── database-orm (数据库设计与ORM) [intermediate]
+  │           id: database-orm | order: 12 | parent: api-design
+  │           prerequisites: api-design
+  ├── security-coding (安全编程实践) [advanced]
+  │     id: security-coding | order: 13 | parent: software-lifecycle
+  │     prerequisites: software-lifecycle
+  │     └── performance-tuning (性能分析与调优) [advanced]
+  │           id: performance-tuning | order: 14 | parent: security-coding
+  │           prerequisites: security-coding
+```
+
+### 10-cryptography — 密码学方向
+
+```
+classical-ciphers (古典密码 凯撒、维吉尼亚) [intermediate]
+  id: classical-ciphers | order: 1 | parent: 无
+  prerequisites: 无
+  └── symmetric-crypto (对称加密 AES/DES) [advanced]
+        id: symmetric-crypto | order: 2 | parent: classical-ciphers
+        prerequisites: classical-ciphers
+        └── public-key-crypto (公钥密码 RSA/ECC) [advanced]
+              id: public-key-crypto | order: 3 | parent: symmetric-crypto
+              prerequisites: symmetric-crypto
+              ├── hash-functions (哈希函数 SHA/MD) [advanced]
+              │     id: hash-functions | order: 4 | parent: public-key-crypto
+              │     prerequisites: public-key-crypto
+              ├── digital-signatures (数字签名与证书) [advanced]
+              │     id: digital-signatures | order: 5 | parent: public-key-crypto
+              │     prerequisites: public-key-crypto
+              ├── crypto-protocols (密码协议 SSL/TLS) [advanced]
+              │     id: crypto-protocols | order: 6 | parent: public-key-crypto
+              │     prerequisites: public-key-crypto
+              ├── zero-knowledge-proofs (零知识证明) [advanced]
+              │     id: zero-knowledge-proofs | order: 7 | parent: public-key-crypto
+              │     prerequisites: public-key-crypto
+              ├── quantum-cryptography (量子密码学) [advanced]
+              │     id: quantum-cryptography | order: 8 | parent: public-key-crypto
+              │     prerequisites: public-key-crypto
+              └── cryptanalysis (密码分析) [advanced]
+                    id: cryptanalysis | order: 9 | parent: quantum-cryptography
+                    prerequisites: classical-ciphers, symmetric-crypto
+```
+
+### 11-computer-graphics — 计算机图形学方向
+
+```
+2d-3d-transforms (2D/3D变换与齐次坐标) [intermediate]
+  id: 2d-3d-transforms | order: 1 | parent: 无
+  prerequisites: 无
+  └── graphics-pipeline (光栅化管线) [advanced]
+        id: graphics-pipeline | order: 2 | parent: 2d-3d-transforms
+        prerequisites: 2d-3d-transforms
+        ├── rasterization-depth (三角形光栅化与深度缓冲) [advanced]
+        │     id: rasterization-depth | order: 3 | parent: graphics-pipeline
+        │     prerequisites: graphics-pipeline
+        ├── texture-mapping (纹理映射与滤波) [advanced]
+        │     id: texture-mapping | order: 4 | parent: graphics-pipeline
+        │     prerequisites: graphics-pipeline
+        ├── lighting-shading (光照与着色模型) [advanced]
+        │     id: lighting-shading | order: 5 | parent: graphics-pipeline
+        │     prerequisites: graphics-pipeline
+        │     └── shadow-ao (阴影与环境光遮蔽) [advanced]
+        │           id: shadow-ao | order: 6 | parent: lighting-shading
+        │           prerequisites: lighting-shading
+        │           └── ray-tracing (光线追踪基础) [advanced]
+        │                 id: ray-tracing | order: 7 | parent: shadow-ao
+        │                 prerequisites: lighting-shading
+        │                 └── acceleration-structures (加速结构 BVH/KD-Tree) [advanced]
+        │                       id: acceleration-structures | order: 8 | parent: ray-tracing
+        │                       prerequisites: ray-tracing
+        │                       └── gpu-architecture (GPU架构与着色器编程) [advanced]
+        │                             id: gpu-architecture | order: 9 | parent: acceleration-structures
+        │                             prerequisites: graphics-pipeline
+        │                             └── curves-surfaces (曲线与曲面) [advanced]
+        │                                   id: curves-surfaces | order: 10 | parent: gpu-architecture
+        │                                   prerequisites: gpu-architecture
+        │                                   └── animation (计算机动画) [advanced]
+        │                                         id: animation | order: 11 | parent: curves-surfaces
+        │                                         prerequisites: curves-surfaces
+        │                                         └── modern-rendering (现代渲染技术 PBR) [advanced]
+        │                                               id: modern-rendering | order: 12 | parent: animation
+        │                                               prerequisites: animation
+```
+### 12-machine-learning — 机器学习 / 人工智能方向
+
+```
+ai-overview (人工智能概述与历史) [intermediate]
+  id: ai-overview | order: 1 | parent: 无
+  prerequisites: 无
+  ├── search-algorithms (搜索算法 BFS/DFS/A\*) [intermediate]
+  │     id: search-algorithms | order: 2 | parent: ai-overview
+  │     prerequisites: ai-overview
+  │     └── minimax (博弈与对抗搜索) [advanced]
+  │           id: minimax | order: 3 | parent: search-algorithms
+  │           prerequisites: search-algorithms
+  ├── linear-regression (线性回归与逻辑回归) [intermediate]
+  │     id: linear-regression | order: 4 | parent: ai-overview
+  │     prerequisites: ai-overview
+  │     ├── decision-tree (决策树与随机森林) [intermediate]
+  │     │     id: decision-tree | order: 5 | parent: linear-regression
+  │     │     prerequisites: linear-regression
+  │     │     └── svm (支持向量机) [advanced]
+  │     │           id: svm | order: 6 | parent: decision-tree
+  │     │           prerequisites: linear-regression
+  │     │           └── knn (k近邻与朴素贝叶斯) [intermediate]
+  │     │                 id: knn | order: 7 | parent: svm
+  │     │                 prerequisites: linear-regression
+  │     │                 └── clustering (聚类 k-Means/DBSCAN) [intermediate]
+  │     │                       id: clustering | order: 8 | parent: knn
+  │     │                       prerequisites: knn
+  │     │                       └── pca (主成分分析) [advanced]
+  │     │                             id: pca | order: 9 | parent: clustering
+  │     │                             prerequisites: linear-regression
+  │     │                             └── neural-network (神经网络与反向传播) [advanced]
+  │     │                                   id: neural-network | order: 10 | parent: pca
+  │     │                                   prerequisites: linear-regression
+  │     │                                   ├── cnn (卷积神经网络) [advanced]
+  │     │                                   │     id: cnn | order: 11 | parent: neural-network
+  │     │                                   │     prerequisites: neural-network
+  │     │                                   │     └── rnn (循环神经网络 LSTM) [advanced]
+  │     │                                   │           id: rnn | order: 12 | parent: cnn
+  │     │                                   │           prerequisites: neural-network
+  │     │                                   │           └── transformer (Transformer与注意力) [advanced]
+  │     │                                   │                 id: transformer | order: 13 | parent: rnn
+  │     │                                   │                 prerequisites: rnn
+  │     │                                   │                 ├── generative-models (生成模型) [advanced]
+  │     │                                   │                 │     id: generative-models | order: 14 | parent: transformer
+  │     │                                   │                 │     prerequisites: neural-network
+  │     │                                   │                 ├── reinforcement-learning (强化学习) [advanced]
+  │     │                                   │                 │     id: reinforcement-learning | order: 15 | parent: transformer
+  │     │                                   │                 │     prerequisites: neural-network
+  │     │                                   │                 └── nlp (自然语言处理) [advanced]
+  │     │                                   │                       id: nlp | order: 16 | parent: transformer
+  │     │                                   │                       prerequisites: transformer
+  │     │                                   ├── mlops (MLOps与模型部署) [advanced]
+  │     │                                   │     id: mlops | order: 18 | parent: computer-vision
+  │     │                                   │     prerequisites: linear-regression
+  │     │                                   │     └── ai-ethics (AI伦理与公平性) [advanced]
+  │     │                                   │           id: ai-ethics | order: 19 | parent: mlops
+  │     │                                   │           prerequisites: mlops
+  │     └── computer-vision (计算机视觉) [advanced]
+  │           id: computer-vision | order: 17 | parent: transformer
+  │           prerequisites: cnn
+```
+
+### 13-cybersecurity — 网络安全方向
+
+```
+cybersecurity-basics (安全基础概念 CIA三元组) [intermediate]
+  id: cybersecurity-basics | order: 1 | parent: 无
+  prerequisites: 无
+  └── authentication-access-control (身份认证与访问控制) [intermediate]
+        id: authentication-access-control | order: 2 | parent: cybersecurity-basics
+        prerequisites: cybersecurity-basics
+        └── network-attacks (网络攻击与防御 DDoS/MITM) [intermediate]
+              id: network-attacks | order: 3 | parent: authentication-access-control
+              prerequisites: authentication-access-control
+              ├── web-security (Web安全 XSS/SQL注入/CSRF) [intermediate]
+              │     id: web-security | order: 4 | parent: network-attacks
+              │     prerequisites: network-attacks
+              │     └── malware-analysis (恶意软件分析) [advanced]
+              │           id: malware-analysis | order: 5 | parent: web-security
+              │           prerequisites: web-security
+              │           └── firewall-ids (防火墙与入侵检测) [intermediate]
+              │                 id: firewall-ids | order: 6 | parent: malware-analysis
+              │                 prerequisites: network-attacks
+              │                 └── ssdlc (安全开发生命周期 SSDLC) [advanced]
+              │                       id: ssdlc | order: 7 | parent: firewall-ids
+              │                       prerequisites: firewall-ids
+              │                       └── digital-forensics (数字取证) [advanced]
+              │                             id: digital-forensics | order: 8 | parent: ssdlc
+              │                             prerequisites: malware-analysis
+```
+
+### 14-distributed-systems — 分布式系统方向
+
+```
+distributed-system-models (分布式系统模型与CAP定理) [advanced]
+  id: distributed-system-models | order: 1 | parent: 无
+  prerequisites: 无
+  └── consensus-protocols (一致性协议 Paxos/Raft) [advanced]
+        id: consensus-protocols | order: 2 | parent: distributed-system-models
+        prerequisites: distributed-system-models
+        ├── distributed-storage (分布式存储 GFS/HDFS) [advanced]
+        │     id: distributed-storage | order: 3 | parent: consensus-protocols
+        │     prerequisites: distributed-system-models
+        ├── distributed-computing (分布式计算 MapReduce) [advanced]
+        │     id: distributed-computing | order: 4 | parent: consensus-protocols
+        │     prerequisites: distributed-system-models
+        │     └── message-queues (消息队列 Kafka) [advanced]
+        │           id: message-queues | order: 5 | parent: distributed-computing
+        │           prerequisites: distributed-system-models
+        │           └── microservices (微服务架构) [advanced]
+        │                 id: microservices | order: 6 | parent: message-queues
+        │                 prerequisites: distributed-system-models
+        │                 └── container-orchestration (容器与编排 Docker/K8s) [advanced]
+        │                       id: container-orchestration | order: 7 | parent: microservices
+        │                       prerequisites: microservices
+        │                       └── distributed-transactions (分布式事务 2PC/Saga) [advanced]
+        │                             id: distributed-transactions | order: 8 | parent: container-orchestration
+        │                             prerequisites: distributed-system-models
+```
+
+### 15-quantum-computing — 量子计算方向
+
+```
+qubit-gates (量子比特与量子门) [advanced]
+  id: qubit-gates | order: 1 | parent: 无
+  prerequisites: 无
+  └── entanglement-bell (量子纠缠与贝尔不等式) [advanced]
+        id: entanglement-bell | order: 2 | parent: qubit-gates
+        prerequisites: qubit-gates
+        └── quantum-algorithms (量子算法 Grover/Shor) [advanced]
+              id: quantum-algorithms | order: 3 | parent: entanglement-bell
+              prerequisites: qubit-gates
+              ├── quantum-error-correction (量子纠错 表面码) [advanced]
+              │     id: quantum-error-correction | order: 4 | parent: quantum-algorithms
+              │     prerequisites: qubit-gates
+              │     └── quantum-hardware (量子硬件概述) [advanced]
+              │           id: quantum-hardware | order: 5 | parent: quantum-error-correction
+              │           prerequisites: qubit-gates
+```
+
+### 16-web3-blockchain — 区块链 / Web3 方向
+
+```
+blockchain-data-structure (区块链数据结构 Merkle Tree) [advanced]
+  id: blockchain-data-structure | order: 1 | parent: 无
+  prerequisites: 无
+  └── pow-consensus (工作量证明与共识 PoW/PoS) [advanced]
+        id: pow-consensus | order: 2 | parent: blockchain-data-structure
+        prerequisites: blockchain-data-structure
+        └── smart-contracts (智能合约 Solidity) [advanced]
+              id: smart-contracts | order: 3 | parent: pow-consensus
+              prerequisites: blockchain-data-structure
+              ├── dapp (去中心化应用 DApp) [advanced]
+              │     id: dapp | order: 4 | parent: smart-contracts
+              │     prerequisites: smart-contracts
+              │     └── layer2-scaling (Layer2与扩容 Rollup) [advanced]
+              │           id: layer2-scaling | order: 5 | parent: dapp
+              │           prerequisites: pow-consensus
+```
+
+### 17-formal-methods — 形式化方法方向
+
+```
+propositional-logic (命题逻辑与谓词逻辑) [advanced]
+  id: propositional-logic | order: 1 | parent: 无
+  prerequisites: 无
+  └── model-checking (模型检验 Model Checking) [advanced]
+        id: model-checking | order: 2 | parent: propositional-logic
+        prerequisites: propositional-logic
+        └── theorem-proving (定理证明 Coq/Lean) [advanced]
+              id: theorem-proving | order: 3 | parent: model-checking
+              prerequisites: propositional-logic
+              └── hoare-logic (程序验证 Hoare Logic) [advanced]
+                    id: hoare-logic | order: 4 | parent: theorem-proving
+                    prerequisites: propositional-logic
+```
 
 ---
 
@@ -303,6 +763,124 @@ interrupts-exceptions (中断与异常，来自硬件)
 | 60 | `io-drivers` | I/O 硬件与驱动模型 | intermediate | interrupts-exceptions | 1 | interrupts-exceptions |
 | 61 | `interrupt-handling` | 中断处理 | advanced | io-drivers | 1 | io-drivers |
 | 62 | `dma` | DMA（直接存储器访问） | advanced | interrupt-handling | 0 | interrupt-handling |
+| 63 | `array-linked-list` | 数组与链表 | beginner | — | 1 | — |
+| 64 | `stack-queue` | 栈与队列 | beginner | array-linked-list | 2 | array-linked-list |
+| 65 | `hash-table` | 哈希表 | intermediate | stack-queue | 1 | array-linked-list |
+| 66 | `binary-tree` | 二叉树与遍历 | intermediate | hash-table | 2 | stack-queue |
+| 67 | `binary-search-tree` | 二叉搜索树 | intermediate | binary-tree | 2 | binary-tree |
+| 68 | `heap` | 堆与优先队列 | intermediate | binary-search-tree | 1 | binary-tree |
+| 69 | `balanced-tree` | 平衡树（AVL/红黑树） | advanced | binary-search-tree | 0 | binary-search-tree |
+| 70 | `graph-representation` | 图的表示 | intermediate | binary-tree | 1 | array-linked-list |
+| 71 | `dfs-bfs` | DFS / BFS | intermediate | graph-representation | 2 | stack-queue, graph-representation |
+| 72 | `shortest-path` | 最短路径（Dijkstra, Floyd） | advanced | dfs-bfs | 0 | dfs-bfs |
+| 73 | `minimum-spanning-tree` | 最小生成树（Kruskal, Prim） | advanced | dfs-bfs | 0 | dfs-bfs |
+| 74 | `basic-sort` | 基础排序（插入、选择、冒泡） | beginner | array-linked-list | 0 | array-linked-list |
+| 75 | `advanced-sort` | 高级排序（归并、快排、堆排） | intermediate | heap | 0 | heap |
+| 76 | `binary-search` | 二分搜索 | beginner | array-linked-list | 0 | array-linked-list |
+| 77 | `recursion-divide-conquer` | 递归与分治 | intermediate | stack-queue | 3 | stack-queue |
+| 78 | `dynamic-programming` | 动态规划 | advanced | recursion-divide-conquer | 0 | recursion-divide-conquer |
+| 79 | `greedy` | 贪心算法 | advanced | recursion-divide-conquer | 0 | recursion-divide-conquer |
+| 80 | `backtracking` | 回溯与剪枝 | advanced | recursion-divide-conquer | 0 | recursion-divide-conquer |
+| 81 | `big-o-notation` | 时间复杂度与大O | intermediate | recursion-divide-conquer | 1 | recursion-divide-conquer |
+| 82 | `p-vs-np` | P vs NP简述 | advanced | big-o-notation | 0 | big-o-notation |
+| 83 | `programming-paradigms` | 编程语言范式概述 | beginner | — | 3 | — |
+| 84 | `variable-scope` | 变量、作用域与绑定 | intermediate | programming-paradigms | 1 | programming-paradigms |
+| 85 | `evaluation-strategies` | 求值策略 | intermediate | variable-scope | 2 | variable-scope |
+| 86 | `higher-order-functions` | 高阶函数与闭包 | intermediate | programming-paradigms | 1 | programming-paradigms |
+| 87 | `lambda-calculus` | Lambda演算基础 | advanced | evaluation-strategies | 0 | evaluation-strategies |
+| 88 | `algebraic-data-types` | 代数数据类型与模式匹配 | intermediate | higher-order-functions | 1 | higher-order-functions |
+| 89 | `lazy-evaluation` | 惰性求值与无穷数据结构 | advanced | algebraic-data-types | 0 | algebraic-data-types |
+| 90 | `static-vs-dynamic` | 静态vs动态类型 | intermediate | programming-paradigms | 2 | programming-paradigms |
+| 91 | `type-inference` | 类型推导与多态 | advanced | static-vs-dynamic | 0 | static-vs-dynamic |
+| 92 | `subtyping` | 子类型与变型 | advanced | static-vs-dynamic | 0 | static-vs-dynamic |
+| 93 | `operational-semantics` | 操作语义 | advanced | programming-paradigms | 0 | programming-paradigms |
+| 94 | `garbage-collection` | 垃圾回收机制 | advanced | evaluation-strategies | 1 | evaluation-strategies |
+| 95 | `concurrency-models` | 并发编程模型 | advanced | garbage-collection | 0 | garbage-collection |
+| 96 | `domain-specific-languages` | 领域特定语言 | advanced | programming-paradigms | 0 | programming-paradigms |
+| 97 | `software-lifecycle` | 软件生命周期与过程模型 | beginner | — | 4 | — |
+| 98 | `agile-scrum` | 敏捷开发与Scrum | beginner | software-lifecycle | 1 | software-lifecycle |
+| 99 | `version-control` | 版本控制（Git） | beginner | agile-scrum | 0 | agile-scrum |
+| 100 | `requirements-analysis` | 需求获取与分析 | intermediate | software-lifecycle | 1 | software-lifecycle |
+| 101 | `software-architecture` | 软件架构与设计模式 | advanced | requirements-analysis | 2 | requirements-analysis |
+| 102 | `uml-modeling` | UML建模 | intermediate | software-architecture | 0 | software-architecture |
+| 103 | `solid-principles` | SOLID原则 | intermediate | software-architecture | 1 | software-architecture |
+| 104 | `software-testing` | 软件测试（单元/集成/E2E） | intermediate | solid-principles | 1 | solid-principles |
+| 105 | `ci-cd` | CI/CD与DevOps | intermediate | software-testing | 1 | software-testing, version-control |
+| 106 | `code-review` | 代码审查与重构 | intermediate | ci-cd | 0 | ci-cd |
+| 107 | `api-design` | API设计与REST | intermediate | software-lifecycle | 1 | software-lifecycle |
+| 108 | `database-orm` | 数据库设计与ORM | intermediate | api-design | 0 | api-design |
+| 109 | `security-coding` | 安全编程实践 | advanced | software-lifecycle | 1 | software-lifecycle |
+| 110 | `performance-tuning` | 性能分析与调优 | advanced | security-coding | 0 | security-coding |
+| 111 | `classical-ciphers` | 古典密码（凯撒、维吉尼亚） | intermediate | — | 1 | — |
+| 112 | `symmetric-crypto` | 对称加密（AES, DES） | advanced | classical-ciphers | 1 | classical-ciphers |
+| 113 | `public-key-crypto` | 公钥密码（RSA, ECC） | advanced | symmetric-crypto | 6 | symmetric-crypto |
+| 114 | `hash-functions` | 哈希函数（SHA, MD） | advanced | public-key-crypto | 0 | public-key-crypto |
+| 115 | `digital-signatures` | 数字签名与证书 | advanced | public-key-crypto | 0 | public-key-crypto |
+| 116 | `crypto-protocols` | 密码协议（SSL/TLS） | advanced | public-key-crypto | 0 | public-key-crypto |
+| 117 | `zero-knowledge-proofs` | 零知识证明 | advanced | public-key-crypto | 0 | public-key-crypto |
+| 118 | `quantum-cryptography` | 量子密码学 | advanced | public-key-crypto | 1 | public-key-crypto |
+| 119 | `cryptanalysis` | 密码分析 | advanced | quantum-cryptography | 0 | classical-ciphers, symmetric-crypto |
+| 120 | `2d-3d-transforms` | 2D/3D变换与齐次坐标 | intermediate | — | 1 | — |
+| 121 | `graphics-pipeline` | 光栅化管线 | advanced | 2d-3d-transforms | 5 | 2d-3d-transforms |
+| 122 | `rasterization-depth` | 三角形光栅化与深度缓冲 | advanced | graphics-pipeline | 0 | graphics-pipeline |
+| 123 | `texture-mapping` | 纹理映射与滤波 | advanced | graphics-pipeline | 0 | graphics-pipeline |
+| 124 | `lighting-shading` | 光照与着色模型 | advanced | graphics-pipeline | 1 | graphics-pipeline |
+| 125 | `shadow-ao` | 阴影与环境光遮蔽 | advanced | lighting-shading | 1 | lighting-shading |
+| 126 | `ray-tracing` | 光线追踪基础 | advanced | shadow-ao | 1 | lighting-shading |
+| 127 | `acceleration-structures` | 加速结构（BVH, KD-Tree） | advanced | ray-tracing | 1 | ray-tracing |
+| 128 | `gpu-architecture` | GPU架构与着色器编程 | advanced | acceleration-structures | 1 | graphics-pipeline |
+| 129 | `curves-surfaces` | 曲线与曲面（Bézier, B-Spline） | advanced | gpu-architecture | 1 | gpu-architecture |
+| 130 | `animation` | 计算机动画 | advanced | curves-surfaces | 1 | curves-surfaces |
+| 131 | `modern-rendering` | 现代渲染技术（PBR, 实时全局光照） | advanced | animation | 0 | animation |
+| 132 | `ai-overview` | 人工智能概述与历史 | intermediate | — | 2 | — |
+| 133 | `search-algorithms` | 搜索算法（BFS, DFS, A\*） | intermediate | ai-overview | 1 | ai-overview |
+| 134 | `minimax` | 博弈与对抗搜索（Minimax） | advanced | search-algorithms | 0 | search-algorithms |
+| 135 | `linear-regression` | 线性回归与逻辑回归 | intermediate | ai-overview | 5 | ai-overview |
+| 136 | `decision-tree` | 决策树与随机森林 | intermediate | linear-regression | 1 | linear-regression |
+| 137 | `svm` | 支持向量机（SVM） | advanced | decision-tree | 1 | linear-regression |
+| 138 | `knn` | k近邻与朴素贝叶斯 | intermediate | svm | 1 | linear-regression |
+| 139 | `clustering` | 聚类（k-Means, DBSCAN） | intermediate | knn | 1 | knn |
+| 140 | `pca` | 主成分分析（PCA） | advanced | clustering | 1 | linear-regression |
+| 141 | `neural-network` | 神经网络与反向传播 | advanced | pca | 3 | linear-regression |
+| 142 | `cnn` | 卷积神经网络（CNN） | advanced | neural-network | 1 | neural-network |
+| 143 | `rnn` | 循环神经网络（RNN / LSTM） | advanced | cnn | 1 | neural-network |
+| 144 | `transformer` | Transformer与注意力机制 | advanced | rnn | 3 | rnn |
+| 145 | `generative-models` | 生成模型（GAN, VAE, 扩散模型） | advanced | transformer | 0 | neural-network |
+| 146 | `reinforcement-learning` | 强化学习（Q-Learning, DQN） | advanced | transformer | 0 | neural-network |
+| 147 | `nlp` | 自然语言处理（NLP） | advanced | transformer | 0 | transformer |
+| 148 | `computer-vision` | 计算机视觉 | advanced | transformer | 0 | cnn |
+| 149 | `mlops` | MLOps与模型部署 | advanced | computer-vision | 1 | linear-regression |
+| 150 | `ai-ethics` | AI伦理与公平性 | advanced | mlops | 0 | mlops |
+| 151 | `cybersecurity-basics` | 安全基础概念（CIA三元组） | intermediate | — | 1 | — |
+| 152 | `authentication-access-control` | 身份认证与访问控制 | intermediate | cybersecurity-basics | 1 | cybersecurity-basics |
+| 153 | `network-attacks` | 网络攻击与防御（DDoS, MITM） | intermediate | authentication-access-control | 2 | authentication-access-control |
+| 154 | `web-security` | Web安全（XSS, SQL注入, CSRF） | intermediate | network-attacks | 1 | network-attacks |
+| 155 | `malware-analysis` | 恶意软件分析 | advanced | web-security | 1 | web-security |
+| 156 | `firewall-ids` | 防火墙与入侵检测 | intermediate | malware-analysis | 1 | network-attacks |
+| 157 | `ssdlc` | 安全开发生命周期（SSDLC） | advanced | firewall-ids | 1 | firewall-ids |
+| 158 | `digital-forensics` | 数字取证 | advanced | ssdlc | 0 | malware-analysis |
+| 159 | `distributed-system-models` | 分布式系统模型与CAP定理 | advanced | — | 1 | — |
+| 160 | `consensus-protocols` | 一致性协议（Paxos, Raft） | advanced | distributed-system-models | 2 | distributed-system-models |
+| 161 | `distributed-storage` | 分布式存储（GFS, HDFS） | advanced | consensus-protocols | 0 | distributed-system-models |
+| 162 | `distributed-computing` | 分布式计算（MapReduce） | advanced | consensus-protocols | 1 | distributed-system-models |
+| 163 | `message-queues` | 消息队列（Kafka） | advanced | distributed-computing | 1 | distributed-system-models |
+| 164 | `microservices` | 微服务架构 | advanced | message-queues | 1 | distributed-system-models |
+| 165 | `container-orchestration` | 容器与编排（Docker, K8s） | advanced | microservices | 1 | microservices |
+| 166 | `distributed-transactions` | 分布式事务（2PC, Saga） | advanced | container-orchestration | 0 | distributed-system-models |
+| 167 | `qubit-gates` | 量子比特与量子门 | advanced | — | 1 | — |
+| 168 | `entanglement-bell` | 量子纠缠与贝尔不等式 | advanced | qubit-gates | 1 | qubit-gates |
+| 169 | `quantum-algorithms` | 量子算法（Grover, Shor） | advanced | entanglement-bell | 1 | qubit-gates |
+| 170 | `quantum-error-correction` | 量子纠错（表面码） | advanced | quantum-algorithms | 1 | qubit-gates |
+| 171 | `quantum-hardware` | 量子硬件概述 | advanced | quantum-error-correction | 0 | qubit-gates |
+| 172 | `blockchain-data-structure` | 区块链数据结构（Merkle Tree） | advanced | — | 1 | — |
+| 173 | `pow-consensus` | 工作量证明与共识（PoW/PoS） | advanced | blockchain-data-structure | 1 | blockchain-data-structure |
+| 174 | `smart-contracts` | 智能合约（Solidity） | advanced | pow-consensus | 1 | blockchain-data-structure |
+| 175 | `dapp` | 去中心化应用（DApp） | advanced | smart-contracts | 1 | smart-contracts |
+| 176 | `layer2-scaling` | Layer2与扩容方案（Rollup） | advanced | dapp | 0 | pow-consensus |
+| 177 | `propositional-logic` | 命题逻辑与谓词逻辑 | advanced | — | 1 | — |
+| 178 | `model-checking` | 模型检验（Model Checking） | advanced | propositional-logic | 1 | propositional-logic |
+| 179 | `theorem-proving` | 定理证明（Coq, Lean） | advanced | model-checking | 1 | propositional-logic |
+| 180 | `hoare-logic` | 程序验证（Hoare Logic, 分离逻辑） | advanced | theorem-proving | 0 | propositional-logic |
 
 ---
 

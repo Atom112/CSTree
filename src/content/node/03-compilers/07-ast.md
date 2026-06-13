@@ -15,32 +15,43 @@ tags:
   - compiler
   - ast
 createdAt: 2026-06-12
+updatedAt: 2026-06-13
 ---
 
-## 从语法树到抽象语法树
+## 🌳 一棵"树"——去掉标点，只留骨架
 
-语法分析产生的是**具体语法树（Parse Tree）**——包含所有语法细节。但对后续阶段来说，很多细节（括号、分号）是冗余的。**AST** 只保留程序结构的关键信息。
+语法分析（Parser）产生的**具体语法树**包含了所有细节——括号、分号、逗号——这些对编译器后续阶段是冗余的。
+
+**AST（Abstract Syntax Tree，抽象语法树）** 去掉这些冗余，只保留程序的逻辑骨架。
+
+> 🏪 **类比：房屋结构图 vs 装修效果图**
+>
+> **具体语法树** = 建筑蓝图——标注了每根钢筋、每个螺丝的位置。非常精确，但信息太多。
+>
+> **AST** = 装修效果图——只显示房间布局、门窗位置。没人需要在效果图里看到螺丝钉的位置。
+>
+> 编译器后续阶段（语义分析、代码生成）只关心"房间怎么布局"——不需要知道"螺丝钉钉在哪"。
 
 ```
-具体语法树（parse tree）：         抽象语法树（AST）：
-     语句                          =
-    / / \ \ \                     / \
-int  a  = 表达式 ;                a   +
-        / | \                       / \
-      表达式 + 表达式              42   1
-        |        |
-       42        1
+具体语法树（含分号、括号）：          AST（只留骨架）：
+       语句                              =
+      / / \ \ \                         / \
+  int  a  = 表达式 ;                   a   +
+          / | \                           / \
+       表达式 + 表达式                  42   1
+         |        |
+        42        1
 ```
 
-> 🏫 **类比：房屋结构图 vs 装修效果图**
-> - 具体语法树 = 建筑蓝图（标注了每根钢筋、每个螺丝）
-> - AST = 装修效果图（只显示房间布局、门、窗——没人需要在效果图里看到螺丝钉）
+---
 
-## AST 的节点类型
+## 🧱 AST 的节点类型
 
 ```python
-# AST 节点类型
+# AST 的节点类型定义——每种节点对应一种语法构造
+
 class ASTNode:
+    """所有 AST 节点的基类"""
     pass
 
 class Program(ASTNode):
@@ -48,91 +59,105 @@ class Program(ASTNode):
         self.statements = statements  # 语句列表
 
 class BinaryOp(ASTNode):
+    """二元运算：a + b, a * b 等"""
     def __init__(self, op, left, right):
         self.op = op          # '+', '-', '*', '/', ...
         self.left = left      # ASTNode（左操作数）
         self.right = right    # ASTNode（右操作数）
 
 class Number(ASTNode):
+    """整数字面量：42"""
     def __init__(self, value):
-        self.value = value    # 整数或浮点值
+        self.value = value
 
 class Variable(ASTNode):
+    """变量引用：a, b, sum"""
     def __init__(self, name):
-        self.name = name      # 变量名
+        self.name = name
 
 class Assignment(ASTNode):
-    def __init__(self, var, expr):
-        self.var = var        # Variable 节点
-        self.expr = expr      # 赋值的表达式
+    """赋值语句：a = expr"""
+    def __init__(self, target, value):
+        self.target = target  # Variable
+        self.value = value    # ASTNode
 
-class IfStatement(ASTNode):
-    def __init__(self, condition, then_body, else_body=None):
-        self.condition = condition
-        self.then_body = then_body
-        self.else_body = else_body
+class Print(ASTNode):
+    """输出语句：print(x)"""
+    def __init__(self, expr):
+        self.expr = expr
 ```
 
-### 构建 AST（语法分析阶段）
+---
+
+## 🔍 遍历 AST——编译器"读"程序的方式
+
+编译器不是"看"源文件的——它遍历 AST。AST 是递归结构，所以遍历也是递归的：
 
 ```python
-# 在递归下降解析器中构建 AST
-class Parser:
-    def parse_expression(self):
-        left = self.parse_term()
-        while self.peek() in ('+', '-'):
-            op = self.consume()
-            right = self.parse_term()
-            left = BinaryOp(op, left, right)  # 构建 AST 节点
-        return left
+# 递归遍历 AST——计算表达式的值（解释器模式）
+def evaluate(node):
+    if isinstance(node, Number):
+        return node.value
     
-    def parse_if(self):
-        self.consume('if')
-        self.consume('(')
-        cond = self.parse_expression()
-        self.consume(')')
-        then_body = self.parse_statement()
-        else_body = None
-        if self.peek() == 'else':
-            self.consume('else')
-            else_body = self.parse_statement()
-        return IfStatement(cond, then_body, else_body)
-```
-
-## AST 的遍历
-
-AST 建好后可以被遍历以执行各种操作：
-
-```python
-# 遍历 AST 并打印
-def print_ast(node, indent=0):
-    prefix = '  ' * indent
-    if isinstance(node, Program):
-        print(f"{prefix}Program")
-        for stmt in node.statements:
-            print_ast(stmt, indent + 1)
     elif isinstance(node, BinaryOp):
-        print(f"{prefix}BinaryOp({node.op})")
-        print_ast(node.left, indent + 1)
-        print_ast(node.right, indent + 1)
-    elif isinstance(node, Number):
-        print(f"{prefix}Number({node.value})")
-    elif isinstance(node, Variable):
-        print(f"{prefix}Var({node.name})")
+        left = evaluate(node.left)
+        right = evaluate(node.right)
+        if node.op == '+': return left + right
+        if node.op == '-': return left - right
+        if node.op == '*': return left * right
+        if node.op == '/': return left // right
+    
     elif isinstance(node, Assignment):
-        print(f"{prefix}Assignment")
-        print_ast(node.var, indent + 1)
-        print_ast(node.expr, indent + 1)
+        value = evaluate(node.value)
+        # 存入符号表
+        symbol_table[node.target.name] = value
+        return value
+    
+    elif isinstance(node, Print):
+        value = evaluate(node.expr)
+        print(value)
+        return value
+    
+    elif isinstance(node, Program):
+        for stmt in node.statements:
+            evaluate(stmt)
+
+# 用 AST 表示 a = 42 + 1 并求值
+ast = Assignment(
+    Variable("a"),
+    BinaryOp('+', Number(42), Number(1))
+)
+print(evaluate(ast))  # 43
 ```
 
-## 小结
+**这段代码本质上就是一个微型解释器**——递归遍历 AST，执行每个节点对应的操作。实际的 Python 解释器也是这样工作的。
 
-| 概念 | 要点 |
-|------|------|
-| **AST** | 去掉语法细节的程序结构树 |
-| **vs 具体语法树** | AST 更简洁，只保留语义相关信息 |
-| **节点类型** | 每种程序结构对应一种 AST 节点 |
-| **递归构建** | 在语法分析过程中递归创建 AST 节点 |
-| **遍历** | 递归遍历 AST 是后续阶段的基础 |
+---
 
-**为什么先学这个？** AST 是编译器中前端的最终输出，也是后端（代码生成、优化）的输入。接下来看看[[semantic-analysis|语义分析与符号表]]——如何在 AST 上检查类型和语义正确性。
+## 🔧 AST 在编译器各阶段的作用
+
+```
+AST 是编译器的"中央数据结构"——前端各阶段都围绕它工作：
+
+语法分析（Parser）→ 生成 AST
+     ↓
+语义分析 → 在 AST 上添加类型信息、检查语义正确性
+     ↓
+IR 生成 → 递归遍历 AST，生成三地址码
+     ↓
+优化 → 在某些编译器中直接在 AST 上做
+```
+
+---
+
+## 📝 小结
+
+| 概念 | 一句话 |
+|:----:|--------|
+| **AST（抽象语法树）** | 去掉标点符号等冗余的程序骨架结构——树状 |
+| **具体语法树 vs AST** | 具体树包含所有细节，AST 只保留逻辑结构 |
+| **节点类型** | 每种语法构造对应一种节点（BinaryOp、Number、Assignment 等）|
+| **递归遍历** | 编译器"读"程序的方式——递归访问 AST 节点 |
+| **AST 的角色** | 编译器的"中央数据结构"——前后端围绕它工作 |
+
+**为什么先学这个？** AST 是语义分析的基础——下一步在 AST 上做[[semantic-analysis|语义分析与符号表]]。

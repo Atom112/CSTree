@@ -59,6 +59,38 @@ int sum(int n) {
 
 分析恶意软件、寻找漏洞。
 
+## 实战：从崩溃地址到源码行
+
+程序崩溃了，你收到一个报错："在地址 0x4012a4 处发生段错误"。怎么找到问题？
+
+```bash
+$ gdb ./myprogram core          # 用 GDB 加载 core dump
+(gdb) bt                        # 查看调用栈
+#0  divide (a=10, b=0) at calc.c:12
+#1  0x00000000004012b8 in main at calc.c:20
+
+(gdb) frame 0                   # 切换到出错的帧
+(gdb) info registers            # 看寄存器状态
+(gdb) disassemble               # 反汇编出错函数
+```
+
+```
+Dump of assembler code for function divide:
+   0x401290 <+0>:   push   rbp
+   0x401291 <+1>:   mov    rbp,rsp
+   0x401294 <+4>:   mov    DWORD PTR [rbp-0x4],edi
+   0x401297 <+7>:   mov    DWORD PTR [rbp-0x8],esi
+   0x40129a <+10>:  mov    eax,DWORD PTR [rbp-0x4]
+   0x40129d <+13>:  cdq
+   0x40129e <+14>:  idiv   DWORD PTR [rbp-0x8]    ← 出错！
+   0x4012a1 <+17>:  pop    rbp
+   0x4012a2 <+18>:  ret
+```
+
+`idiv` 指令在 `[rbp-0x8]`（即 b=0）处触发了除法错误——因为 `idiv` 在除数为 0 时会触发硬件异常。对应到 C 源码就是 `int result = a / b;` 中 `b=0`。
+
+**关键技巧**：GDB 的 `bt`（backtrace）和 `info registers` 是最常用来定位 crash 的命令。加上 `list` 可以看到对应的源码行——汇编调试不是"猜"，是有条理地追溯。
+
 ## 常用反汇编工具
 
 ### objdump（Linux 标配）

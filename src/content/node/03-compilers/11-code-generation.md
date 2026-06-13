@@ -1,127 +1,116 @@
 ---
 id: code-generation
 title: 代码生成
-summary: 代码生成（Code Generation）是编译器的最后阶段——把平台无关的 IR 翻译成目标机器的汇编或机器码，涉及指令选择、寄存器分配和指令调度
+summary: 代码生成（Code Generation）是编译器的"后端"——把平台无关的 IR 翻译成目标 CPU（x86、ARM、RISC-V）的机器指令。指令选择和寄存器分配是两大核心任务
 difficulty: advanced
 order: 11
 parent: ir-three-address
 children:
   - register-allocation
-  - instruction-scheduling
+  - basic-optimizations
 related: []
 prerequisites:
   - ir-three-address
-  - isa-overview
 tags:
   - compiler
-  - codegen
+  - code-gen
+  - backend
 createdAt: 2026-06-12
+updatedAt: 2026-06-13
 ---
 
-## 从 IR 到机器码
+## 🏭 从"通用"到"专用"——IR 翻译成机器码
 
-```llvm
-; LLVM IR
-%sum = add i32 %a, %b
-```
+前面几节生成了平台无关的 IR（三地址码）。但 IR 不能在 CPU 上运行——需要翻译成目标 CPU 的机器指令。
 
-```asm
-; x86-64 汇编
-add eax, ebx    ; 如果 a 在 eax 中，b 在 ebx 中
-```
-
-> 🏫 **类比：食谱翻译**
-> IR 是一份通用食谱（"切菜→热油→炒制"）。代码生成器把它翻译成具体厨房的操作：
-> - 中餐厨房：用炒锅、煤气灶、菜刀
-> - 西餐厨房：用平底锅、电炉、主厨刀
-
-## 指令选择（Instruction Selection）
-
-把 IR 指令映射到目标机器的指令——**关键问题**：一条 IR 指令可能对应多条机器指令，多条 IR 指令也可能拼成一条机器指令。
-
-### 树覆盖方法
-
-把 IR 视为树，用目标机器的指令模式去"覆盖"这棵树：
+**代码生成（Code Generation）** 就是做这个：
 
 ```
-IR 树：              x86 指令模式：
-    +              
-   / \              add src, dst
-  a   b            （单条指令覆盖 + 子树）
-
-    *              
-   / \              imul src, dst
-  a   b            （单条指令覆盖 * 子树）
-
-    a[i]            mov rax, [base + offset*scale]
-   / \             （一条指令完成整个数组访问）
- base index
+IR（三地址码）          → 代码生成 → 目标机器码（x86/ARM/RISC-V）
+t1 = 42 + 1             → mov eax, 43        （x86）
+a = t1                  → mov [rbp-4], eax   （x86）
 ```
 
-> 💡 指令选择通常用**树模式匹配**或**动态规划**实现——找到最"便宜"的指令组合。
+> 🏪 **类比：舞台剧本 → 各地演出**
+>
+> IR = 舞台剧本（用标准的语言写的，可以给任何剧团用）
+> 代码生成 = 导演把剧本改编成具体演出方式：
+> - 在北京演 → 用普通话（x86）
+> - 在上海演 → 用上海话（ARM）
+> - 在广东演 → 用粤语（RISC-V）
+>
+> 故事（逻辑）一样——但具体的"表达方式"不同。
 
-## 窥孔优化（Peephole Optimization）
+---
 
-在生成的指令序列上"滑动"一个小窗口（窥孔），寻找可以优化的局部模式：
+## 🔄 指令选择——找"最匹配"的指令
 
-```asm
-; 优化前                      ; 优化后
-mov rax, rbx                  mov rax, rbx
-mov rcx, rax     →            mov rcx, rbx  ; 省略多余的 mov
-                              
-cmp rax, 0                    test rax, rax  ; 更短的指令
-                              
-jmp L1                        ; ...直接删除，如果 L1 就是下一条
-L1:
-```
-
-## 指令选择示例
+同一个 IR 操作，不同 CPU 有不同的指令来实现：
 
 ```c
-// AST → x86-64 代码生成
-void gen_expr(ASTNode* node) {
-    switch (node->type) {
-    case BINARY_OP: {
-        gen_expr(node->left);   // 计算左操作数 → rax
-        emit("push rax");        // 保存到栈
-        gen_expr(node->right);  // 计算右操作数 → rax
-        emit("pop rcx");         // 恢复左操作数
-        switch (node->op) {
-        case '+': emit("add rax, rcx"); break;
-        case '-': emit("sub rax, rcx"); break;
-        case '*': emit("imul rax, rcx"); break;
-        case '/': emit("idiv rcx"); break;  // rax / rcx
-        }
-        break;
-    }
-    case NUMBER: {
-        emit("mov rax, %d", node->value);
-        break;
-    }
-    case VARIABLE: {
-        emit("mov rax, [rbp - %d]", node->offset);
-        break;
-    }
-    }
-}
+// IR: a = b + c
+// 在不同架构上的指令选择
+
+x86-64：  mov eax, [rbp-8]     ; 加载 b
+          add eax, [rbp-12]    ; 加 c
+          mov [rbp-4], eax     ; 存 a
+
+ARM64：   ldr w0, [x29, -8]   ; 加载 b
+          ldr w1, [x29, -12]  ; 加载 c
+          add w0, w0, w1      ; a = b + c
+          str w0, [x29, -4]   ; 存 a
+
+RISC-V：  lw   a0, -8(s0)     ; 加载 b
+          lw   a1, -12(s0)    ; 加载 c
+          add  a0, a0, a1     ; a = b + c
+          sw   a0, -4(s0)     ; 存 a
 ```
 
-## 代码生成的关键问题
+**核心思路**：IR 指令 → 匹配 CPU 的指令模板 → 生成具体的二进制机器码。这个过程叫"tile-based code generation"（基于模板的代码生成）。
 
-| 问题 | 描述 | 解决方案 |
-|------|------|---------|
-| **指令选择** | 选哪条机器指令 | 树模式匹配 |
-| **寄存器分配** | 无穷虚拟寄存器 → 有限物理寄存器 | 图着色算法 |
-| **指令调度** | 重排指令顺序利用流水线 | 列表调度 |
-| **调用约定** | 函数调用时参数放哪 | ABI 规范 |
+---
 
-## 小结
+## 📊 不同操作的指令选择示例
 
-| 概念 | 要点 |
-|------|------|
-| **指令选择** | IR 指令映射到目标机器指令 |
-| **树覆盖** | 用目标指令模式覆盖 IR 树 |
-| **窥孔优化** | 局部滑动窗口优化指令序列 |
-| **关键问题** | 指令选择、寄存器分配、指令调度、调用约定 |
+| IR 操作 | x86-64 选择 | ARM64 选择 |
+|:-------:|:----------:|:----------:|
+| `a = 42`（赋值常量）| `mov [rbp-4], 42` | `mov w0, #42; str w0, [x29,-4]` |
+| `t = a + 1`（加常数）| `add eax, 1` | `add w0, w0, #1` |
+| `t = a * 2`（乘 2^k）| `shl eax, 1`（移位优化）| `lsl w0, w0, #1`（移位优化）|
+| `if t < 0 goto L` | `cmp eax, 0; jl L` | `cmp w0, #0; b.lt L` |
 
-**为什么先学这个？** 代码生成的关键挑战之一是[[register-allocation|寄存器分配]]——下一节看看编译器如何把无穷多的虚拟变量塞进有限的物理寄存器。
+---
+
+## 🔧 代码生成的挑战——以 `a[i] = b + c * d` 为例
+
+```c
+// 源码
+a[i] = b + c * d;
+
+// 可能的 IR
+t1 = c * d
+t2 = b + t1
+t3 = i * 4          // 地址偏移（int 占 4 字节）
+t4 = &a + t3
+*t4 = t2
+```
+
+编译器需要：
+1. 决定每个临时变量 `t1`-`t4` 放在寄存器还是栈上
+2. 选择最合适的 x86/ARM 指令来实现每个操作
+3. 安排指令顺序以最大化 CPU 流水线效率
+4. 处理寻址模式——`a[i]` 的地址计算
+
+---
+
+## 📝 小结
+
+| 概念 | 一句话 |
+|:----:|--------|
+| **代码生成** | 把 IR 翻译成目标 CPU 的机器码——"剧本→演出" |
+| **指令选择** | 为每个 IR 操作找到 CPU 对应的指令 |
+| **寄存器分配** | 决定哪些数据放寄存器、哪些放栈——后续专题 |
+| **寻址模式** | 利用 CPU 的地址计算能力简化指令（如 `a[i]`）|
+| **多目标支持** | 同一个 IR 可以生成 x86、ARM、RISC-V 的不同代码 |
+
+**为什么先学这个？** 代码生成依赖[[register-allocation|寄存器分配]]——寄存器不够用时怎么办？
