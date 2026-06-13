@@ -263,6 +263,9 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
   const hoveredIdRef = useRef<string | null>(null);
   const nodeIndexRef = useRef<Record<string, TNode>>({});
   const [ready, setReady] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState<{ title: string; summary: string; difficulty: string; section: string } | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const summaryMapRef = useRef<Record<string, string>>({});
 
   useEffect(() => { setReady(true); }, []);
 
@@ -286,6 +289,11 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
     layoutRef.current = tl;
     nodeIndexRef.current = tl.nodeIndex;
 
+    // Build summary map for tooltip
+    const summaryMap: Record<string, string> = {};
+    nodes.forEach((n) => { summaryMap[n.id] = n.summary; });
+    summaryMapRef.current = summaryMap;
+
     // Build SVG content
     const pal = isDark ? DIFF_COLORS_DARK : DIFF_COLORS;
     let html = `<style>
@@ -297,10 +305,12 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
       .virtual-root { cursor: default; }
       .node-hit { fill: transparent; }
       .node-line { stroke-linecap: round; vector-effect: non-scaling-stroke; transition: stroke-width 0.2s; }
-      .node-text { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; user-select: none; }
-      .badge-text { font-family: system-ui, sans-serif; font-size: 9px; font-weight: 700; user-select: none; }
+      .node-text { fill: #334155; font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; user-select: none; }
+      .badge-text { fill: #64748b; font-family: system-ui, sans-serif; font-size: 9px; font-weight: 700; user-select: none; }
+      .badge-circle { fill: #e2e8f0; stroke-width: 1; }
       .dark .node-text { fill: #cbd5e1 !important; }
       .dark .badge-text { fill: #94a3b8 !important; }
+      .dark .badge-circle { fill: #374151 !important; }
       /* 🌟 Hover path highlighting */
       .node-group.dimmed { opacity: 0.15 !important; }
       .node-group.dimmed .node-line { stroke-width: 1.5 !important; }
@@ -371,12 +381,12 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
       }
 
       // Label text
-      html += `<text class="node-text" data-id="${n.id}" x="${n.x + 8}" y="${lineY1 - 5}" fill="${isDark ? '#cbd5e1' : '#334155'}">${label}</text>`;
+      html += `<text class="node-text" data-id="${n.id}" x="${n.x + 8}" y="${lineY1 - 5}">${label}</text>`;
 
       // Child count badge
       if (childCount > 0) {
-        html += `<circle cx="${n.x}" cy="${lineY2}" r="7" fill="${isDark ? '#374151' : '#e2e8f0'}" stroke="${lineColor}" stroke-width="1"/>`;
-        html += `<text class="badge-text" x="${n.x}" y="${lineY2}" text-anchor="middle" dominant-baseline="central" fill="${isDark ? '#94a3b8' : '#64748b'}">${childCount}</text>`;
+        html += `<circle class="badge-circle" cx="${n.x}" cy="${lineY2}" r="7" stroke="${lineColor}"/>`;
+        html += `<text class="badge-text" x="${n.x}" y="${lineY2}" text-anchor="middle" dominant-baseline="central">${childCount}</text>`;
       }
 
       html += `</g>`;
@@ -453,6 +463,7 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
       el.classList.remove('dimmed', 'highlighted');
     });
     hoveredIdRef.current = null;
+    setTooltipContent(null);
   }, []);
 
   // ---- Zoom / Pan event handlers ----
@@ -485,6 +496,12 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
     };
 
     const handleMouseMove = (e: MouseEvent) => {
+      // Update tooltip position if visible
+      if (tooltipRef.current) {
+        tooltipRef.current.style.left = (e.clientX + 15) + 'px';
+        tooltipRef.current.style.top = (e.clientY - 10) + 'px';
+      }
+
       if (!dragRef.current) return;
       const dx = e.clientX - dragRef.current.sx;
       const dy = e.clientY - dragRef.current.sy;
@@ -517,6 +534,7 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
       dragRef.current = null;
       svg.style.cursor = 'default';
       clearHighlights();
+      setTooltipContent(null);
     };
 
     const handleMouseOver = (e: MouseEvent) => {
@@ -524,12 +542,35 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
       if (dragRef.current?.moved) return;
       const target = e.target as Element;
       const group = target.closest('[data-id]') as HTMLElement | null;
-      if (!group) return;
+      if (!group) {
+        setTooltipContent(null);
+        return;
+      }
       const id = group.getAttribute('data-id');
-      if (!id || id === '__cstree_root__') return;
+      if (!id || id === '__cstree_root__') {
+        setTooltipContent(null);
+        return;
+      }
       if (id === hoveredIdRef.current) return;
       hoveredIdRef.current = id;
       highlightPath(id);
+
+      const nd = nodeIndexRef.current[id];
+      const summary = summaryMapRef.current[id] || '';
+
+      // Determine section root (the section/板块 this node belongs to)
+      let sectionTitle = '';
+      if (nd) {
+        let cur = nd;
+        while (cur.parents && cur.parents.length > 0) {
+          const parent = cur.parents[0];
+          if (parent.isVirtual) break;
+          cur = parent;
+        }
+        sectionTitle = cur.title || '';
+      }
+
+      setTooltipContent({ title: nd?.title || id, summary, difficulty: nd?.difficulty || 'beginner', section: sectionTitle });
     };
 
     svg.addEventListener('wheel', handleWheel, { passive: false });
@@ -574,10 +615,36 @@ export default function KnowledgeTreeReact({ nodes, currentNodeId }: Props) {
               );
             })}
           </div>
+
+              {/* ── Hover tooltip ── */}
+              {tooltipContent && (
+                <div ref={tooltipRef} className="fixed z-50 pointer-events-none bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 px-4 py-3 max-w-sm" style={{ left: '-9999px', top: '-9999px' }}>
+                  {/* Tags row */}
+                  <div className="flex items-center gap-2 mb-2">
+                    {tooltipContent.section && (
+                      <span className="inline-block text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium">{tooltipContent.section}</span>
+                    )}
+                    <span className={"inline-block text-xs px-2 py-0.5 rounded font-medium " + (
+                      tooltipContent.difficulty === 'beginner'
+                        ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                        : tooltipContent.difficulty === 'intermediate'
+                          ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                          : 'bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300'
+                    )}>
+                      {tooltipContent.difficulty === 'beginner' ? '入门' : tooltipContent.difficulty === 'intermediate' ? '进阶' : '高级'}
+                    </span>
+                  </div>
+                  <div className="font-bold text-base text-gray-900 dark:text-gray-100 mb-1 leading-snug">{tooltipContent.title}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{tooltipContent.summary}</div>
+                </div>
+              )}
         </>
       ) : (
         <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-          <span className="animate-pulse">🌳 加载知识树...</span>
+          <span className="animate-pulse inline-flex items-center gap-1.5">
+            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 12h4v6h8v-6h4L12 2z" /><line x1="12" y1="16" x2="12" y2="22" /></svg>
+            加载知识树...
+          </span>
         </div>
       )}
     </div>

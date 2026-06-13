@@ -34,11 +34,13 @@ function renderBranch(nodeId: string, depth: number): string {
   const indent = depth * 16;
   const liStyle = `style="list-style:none;margin-left:${indent}px"`;
   const linkClass = `mobile-node-link${isCurrent ? ' mobile-node-current' : ''}`;
-  const icon = children.length > 0 ? '📂' : '📄';
+  const folderSvg = '<svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+  const fileSvg = '<svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+  const icon = children.length > 0 ? folderSvg : fileSvg;
   const badge = children.length > 0
     ? `<span class="mobile-node-count">${children.length}</span>`
     : '';
-  const marker = isCurrent ? '<span class="ml-1.5 text-xs opacity-60">📍</span>' : '';
+  const marker = isCurrent ? '<span class="ml-1.5 opacity-60 inline-flex items-center"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>' : '';
 
   if (children.length === 0) {
     return `<li ${liStyle}>

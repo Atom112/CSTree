@@ -14,6 +14,17 @@ const DOMAIN_MAP: Record<string, { dir: string; title: string; desc: string }> =
   compilers:   { dir: '03-compilers',   title: '编译原理',     desc: '词法分析、语法分析、代码生成 — 高级语言的翻译官' },
   networking:  { dir: '04-networking',  title: '计算机网络',   desc: 'TCP/IP、HTTP、路由协议 — 连接世界的神经系统' },
   databases:   { dir: '05-databases',   title: '数据库系统',   desc: 'SQL、索引、事务、B+树 — 数据持久化的基石' },
+  algorithms:  { dir: '06-algorithms',  title: '数据结构与算法', desc: '排序、图、动态规划 — 计算的灵魂' },
+  'programming-languages': { dir: '07-programming-languages', title: '编程语言理论', desc: '类型系统、范式、λ演算 — 表达计算的语法' },
+  'software-eng': { dir: '08-software-eng', title: '软件工程', desc: '设计模式、测试、CI/CD — 构建可靠系统的方法论' },
+  cryptography: { dir: '10-cryptography', title: '密码学', desc: '对称加密、公钥加密、数字签名 — 信息安全的基石' },
+  'computer-graphics': { dir: '11-computer-graphics', title: '计算机图形学', desc: '渲染管线、着色、纹理 — 让计算机"看见"世界' },
+  'machine-learning': { dir: '12-machine-learning', title: '机器学习', desc: '神经网络、决策树、强化学习 — 让计算机学会学习' },
+  cybersecurity: { dir: '13-cybersecurity', title: '网络安全', desc: '渗透测试、防火墙、零信任 — 构筑数字世界的防线' },
+  'distributed-systems': { dir: '14-distributed-systems', title: '分布式系统', desc: '共识算法、CAP理论、RPC — 多台计算机协作的艺术' },
+  'quantum-computing': { dir: '15-quantum-computing', title: '量子计算', desc: '量子比特、量子门、量子纠错 — 计算的新范式' },
+  'web3-blockchain': { dir: '16-web3-blockchain', title: 'Web3与区块链', desc: '去中心化、智能合约、共识机制 — 重新定义信任' },
+  'formal-methods': { dir: '17-formal-methods', title: '形式化方法', desc: '模型检验、定理证明、霍尔逻辑 — 用数学证明程序正确性' },
 };
 
 export async function getStaticPaths() {
@@ -24,6 +35,17 @@ export async function getStaticPaths() {
     { params: { name: 'compilers' } },
     { params: { name: 'networking' } },
     { params: { name: 'databases' } },
+    { params: { name: 'algorithms' } },
+    { params: { name: 'programming-languages' } },
+    { params: { name: 'software-eng' } },
+    { params: { name: 'cryptography' } },
+    { params: { name: 'computer-graphics' } },
+    { params: { name: 'machine-learning' } },
+    { params: { name: 'cybersecurity' } },
+    { params: { name: 'distributed-systems' } },
+    { params: { name: 'quantum-computing' } },
+    { params: { name: 'web3-blockchain' } },
+    { params: { name: 'formal-methods' } },
   ];
 }
 
@@ -83,7 +105,10 @@ const hasContent = totalNodes > 0;
         <!-- Tree view -->
         {rootNodes.length > 0 && (
           <section class="mb-10">
-            <h2 class="text-xl font-bold mb-4">🌳 知识结构</h2>
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-1.5">
+              <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 12h4v6h8v-6h4L12 2z" /><line x1="12" y1="16" x2="12" y2="22" /></svg>
+              <span>知识结构</span>
+            </h2>
             <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-4">
               {rootNodes.map((root) => (
                 <TreeNodeBranch
@@ -99,7 +124,10 @@ const hasContent = totalNodes > 0;
 
         <!-- Learning path -->
         <section>
-          <h2 class="text-xl font-bold mb-4">📋 学习路径</h2>
+          <h2 class="text-xl font-bold mb-4 flex items-center gap-1.5">
+            <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="9" y1="9" x2="15" y2="9" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" /></svg>
+            <span>学习路径</span>
+          </h2>
           <div class="space-y-2">
             {sortedNodes.map((n, i) => {
               const children = graph.getChildren(n.id);
@@ -137,7 +165,9 @@ const hasContent = totalNodes > 0;
     ) : (
       <!-- Empty state -->
       <div class="text-center py-20">
-        <div class="text-5xl mb-4 opacity-50">📚</div>
+        <div class="mb-4 opacity-50 flex justify-center">
+          <svg class="w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg>
+        </div>
         <p class="text-xl text-gray-400 dark:text-gray-500 font-medium">该模块暂无内容</p>
         <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">敬请期待后续更新</p>
       </div>
